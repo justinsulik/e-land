@@ -1,0 +1,25 @@
+<!-- https://bl.ocks.org/Niekes/e920c03edd7950578b8a6cded8b5a1a5 -->
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+<script src="libs/d3-3d.js"></script>
+<body>
+<style type="text/css">
+button {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+}
+</style>
+<button>update</button>
+<svg width="960" height="960"></svg>
+
+</body>
+
+<script>
+var data = <%- data %>
+</script>
+<script src="libs/epistemic_landscape.js"></script>
+<script src="libs/display_data.js"></script>

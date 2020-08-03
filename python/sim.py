@@ -1,13 +1,15 @@
+import sys
 from landscape import Landscape
 from population import Population
 from plot import plot3d
+import json
 
-class Sim():
+class SimParams():
     """
     General parameters for the simulation
     """
     map_size = 50
-    agent_speed = 1
+    runs = 100
 
     # EPISTEMIC PARAMETERS
     desert = 20 #below which value is a patch considered desert (used for initial placement)
@@ -24,17 +26,43 @@ class Sim():
     #todo: auto space hils
 
     # NOISE PARAMETERS
-    noise = 5
-    smoothing = 15
+    noise = 4
+    smoothing = 4
 
     # AGENTS
-    agent_number = 1
+    agent_number = 10
     # params for beta distribution https://homepage.divms.uiowa.edu/~mbognar/applets/beta.html
     alpha = 1
     beta = 1
-    velocity = 1
+    velocity = 0.8
+
+
+def runSim(params, report_type):
+    report(report_type, 'message', "Python: sim starting...")
+    landscape = Landscape(params)
+    population = Population(landscape, params)
+    report(report_type, "data", json.dumps({'landscape': landscape.reportGrid(), 'population': population.reportAgents()}))
+    for i in range(params.runs):
+        for i in range(params.agent_number):
+            population.explore(i)
+        report(report_type, "data", json.dumps({'landscape': landscape.reportGrid(), 'population': population.reportAgents()}))
+    #plot3d(landscape)
+    report(report_type, "message", "Python: sim done...")
+
+def report(report_type, type, data):
+    if report_type == 'browser':
+        print(json.dumps({'type': type, 'data': data}))
+        sys.stdout.flush()
+    elif type != 'data':
+        print(data)
 
 if __name__ == "__main__":
-    landscape = Landscape(Sim)
-    population = Population(landscape, Sim)
-    plot3d(landscape)
+    try:
+        report_type = sys.argv[1]
+    except:
+        report_type = 'terminal'
+    report(report_type, 'message', 'reporting style: '+report_type)
+    runSim(SimParams, report_type)
+
+# print("Python: script done...")
+# print(json.dumps({"message": "Python: script done..."}))

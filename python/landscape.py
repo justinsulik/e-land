@@ -2,7 +2,7 @@ from perlin import PerlinNoiseFactory
 import numpy as np
 from scipy.stats import multivariate_normal
 
-print("Loading landscape...")
+# print("Loading landscape...")
 
 class Landscape():
     """
@@ -32,6 +32,7 @@ class Landscape():
             ('visited', np.int8)
             ]
         )
+
         # COORDINATES
         # centre of the landscape is (0,0)
         self.grid['x'] = np.indices(self.grid.shape)[0]
@@ -46,8 +47,8 @@ class Landscape():
         self.archive = []
 
         # HILLS
-        self.addGaussian(10,10,1000,10)
-        self.addGaussian(40,50,500,5)
+        self.addGaussian(3,3,1000,10)
+        self.addGaussian(20,20,500,5)
 
         # NOISE
         self.addPerlin(Sim.noise, Sim.smoothing)
@@ -55,6 +56,14 @@ class Landscape():
         # EPISTEMIC MASS
         # total amount of epistemic value at start of sim
         self.eMassTotal = np.sum(self.grid['height'])
+
+    def reportGrid(self):
+        """
+        Format grid data as {x,y,z} dictionary for plotting
+        """
+        # Stupidly, 3d_d3 takes y to be height
+        # make center of grid (0,0) by offsetting half of map size
+        return([{'x': point[0]-self.x_size/2, 'z': point[1]-self.y_size/2, 'y': point[2]} for point in self.grid.flatten().tolist()])
 
     def getSig(self,x,y):
         """
@@ -88,7 +97,7 @@ class Landscape():
         INPUT: coordinate
         OUTPUT: Moore neigborhood for that patch
         """
-        coord = self.intI(x,y)
+        # coord = self.intI(x,y)
         for ind in range(8):
             x_wrap = (x + self.mooreIndList[ind][0]) % self.x_size
             y_wrap = (y + self.mooreIndList[ind][1]) % self.y_size
@@ -100,24 +109,14 @@ class Landscape():
         Add Perlin noise
         INPUT: noise (int): amplitude of noise; smoothing (int): randomness of noise
         """
-        pnf = PerlinNoiseFactory(2, octaves=2, tile=(self.x_size, self.y_size))
+        pnf = PerlinNoiseFactory(2, octaves=3, tile=(self.x_size, self.y_size))
         for x, y in [[x,y] for x in range(self.x_size) for y in range(self.x_size)]:
             self.incrementHeight(x,y, round(noise*pnf(x/smoothing, y/smoothing), 4))
 
     def addGaussian(self,x_center,y_center,amplitude,sd):
+        # todo: wrap around
         gaussian = multivariate_normal(mean=[x_center,y_center], cov=[[sd,0],[0,sd]])
         for x, y in [[x,y] for x in range(self.x_size) for y in range(self.x_size)]:
-            self.incrementHeight(x,y,round(amplitude*gaussian.pdf([x,y]),4))
-        #draws = [[int(round(x,0)), int(round(y,0))] for (x,y) in np.random.multivariate_normal([x_center, y_center], [[sd,0],[0,sd]], amplitude)]
-        #for x, y in draws:
-    #        x_grid = x % self.x_size
-    #        y_grid = y % self.y_size
-    #        print(x_grid, y_grid)
-            # todo: add amounts smaller than 1 depending on just how far from 0?
-    #        self.incrementHeight(x_grid,y_grid)
-
-
-
-        #self.grid['height'] += amp * np.exp(-1*(s1*deltaX**2 +s2*prod + s3*deltaY**2)) #without the rounding, there's gradient all over the terrain
-        #self.grid['height'] += np.round(amp * np.exp(-1*(s1*deltaX**2 +s2*prod + s3*deltaY**2))) + 0.5
-        # print(np.round(amp * np.exp(-1*(s1*deltaX**2 +s2*prod + s3*deltaY**2))))
+            # allow wrap around
+            height = max([gaussian.pdf([x,y]),gaussian.pdf([x-self.x_size,y]),gaussian.pdf([x,y-self.y_size]),gaussian.pdf([x-self.x_size,y-self.y_size])])
+            self.incrementHeight(x,y,round(amplitude*height,4))
