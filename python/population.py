@@ -158,10 +158,13 @@ class Population():
                     # Select a random patch to explore
                     chosenPatch = np.random.choice(geqMoores) #choose a new (geq) patch randomdly)
                     # If the random patch is better than the previous height, go there
-                    self.setHeadingToPatch(i,chosenPatch['x'],chosenPatch['y'])
-                    agent['status'] = 0 # exploring-random
+                    if chosenPatch['height'] >= previous_height:
+                        self.setHeadingToPatch(i,chosenPatch['x'],chosenPatch['y'])
+                        agent['status'] = 0 # exploring-random
+                    else:
+                        self.setHeadingToPatch(i, agent['previous_x_patch'], agent['previous_y_patch'])
+                        agent['status'] = 3 # exploring-return to previous
 
-                    # Else return to the previous patch
 
                 else:
                     #IF ONLY LOWER PATCHES, STOP:
