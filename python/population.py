@@ -100,11 +100,12 @@ class Population():
         agent['x_patch'] = int(agent['x'])
         agent['y_patch'] = int(agent['y'])
 
-    def consume(self, i):
-        agent = self.agents[i]
-        sig = self.landscape.getSig(agent['x_patch'], agent['y_patch']);
-        if sig>1:
-            self.landscape.setSig(agent['x_patch'], agent['y_patch'], sig-1)
+    def consume(self):
+        for agent in self.agents:
+        # agent = self.agents[i]
+            sig = self.landscape.getSig(agent['x_patch'], agent['y_patch']);
+            if sig>1:
+                self.landscape.setSig(agent['x_patch'], agent['y_patch'], sig-1)
 
     def explore(self, i):
         agent = self.agents[i]
@@ -160,7 +161,7 @@ class Population():
                     # If the random patch is better than the previous height, go there
                     if chosenPatch['height'] >= previous_height:
                         self.setHeadingToPatch(i,chosenPatch['x'],chosenPatch['y'])
-                        agent['status'] = 0 # exploring-random
+                        agent['status'] = 4 # exploring-random
                     else:
                         self.setHeadingToPatch(i, agent['previous_x_patch'], agent['previous_y_patch'])
                         agent['status'] = 3 # exploring-return to previous
@@ -178,7 +179,7 @@ class Population():
         #MOVE
         agent['previous_height'] = sig
         self.move(i)
-        self.consume(i)
+
 
     def setHeadingToPatch(self,i,xTarg,yTarg):
         """
