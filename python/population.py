@@ -103,9 +103,11 @@ class Population():
     def consume(self):
         for agent in self.agents:
         # agent = self.agents[i]
-            sig = self.landscape.getSig(agent['x_patch'], agent['y_patch']);
-            if sig>1:
-                self.landscape.setSig(agent['x_patch'], agent['y_patch'], sig-1)
+            significance = self.landscape.getSig(agent['x_patch'], agent['y_patch']);
+            if significance>1:
+                new_significance = significance - 1;
+                self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
+                agent['previous_height'] = new_significance
 
     def explore(self, i):
         agent = self.agents[i]
@@ -177,7 +179,6 @@ class Population():
             agent['velocity'] = self.base_velocity
 
         #MOVE
-        agent['previous_height'] = sig
         self.move(i)
 
 
