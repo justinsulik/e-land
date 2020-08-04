@@ -1,6 +1,22 @@
 # print("Loading population...")
 import numpy as np, math
 
+# Since the agent info is passed to the js script as a dict rather than a tuple,
+# this dict maps between the agent info keys and tuple indices
+key_dict = {'x': 0,
+    'y': 1,
+    'x_patch': 2,
+    'y_patch': 3,
+    'height': 4,
+    'heading': 5,
+    'velocity': 6,
+    'previous_x_patch': 7,
+    'previous_y_patch': 8,
+    'previous_height': 9,
+    'social_threshold': 10,
+    'status': 11}
+
+
 class Population():
 
     def __init__(self, landscape, Sim):
@@ -12,21 +28,22 @@ class Population():
         self.base_velocity = Sim.velocity
         self.agents = np.zeros((self.agent_number),dtype=[('x','f4'),('y','f4'), #position on continuum
                                                   ('x_patch','i4'),('y_patch','i4'), #position on grid
+                                                  ('height','f4'),
                                                   ('heading','f4'),
                                                   ('velocity','f4'),
-                                                  ('previous_significance','f4'),
+                                                  ('previous_x_patch','i4'),('previous_y_patch','i4'),
+                                                  ('previous_height','f4'),
                                                   ('social_threshold','f4'),
-                                                  ('height','f4'),
                                                   ('status', 'i4')])
 
         # INITIALIZE AGENTS
         # set heading to random; velocity to sim;
         self.agents['heading'] = np.random.uniform(0,2*math.pi,self.agent_number)
         self.agents['velocity'] = Sim.velocity
-        # have not visited any previous patch, so previous_significance also 0
-        self.agents['previous_significance'] = 0
+        # have not visited any previous patch, so previous_height also 0
+        self.agents['previous_height'] = 0
         # set social_threshold according to beta distribution (1,1 = uniform)
-        self.agents['social_threshold'] = 0.9#np.random.beta(Sim.social_threshold, Sim.beta, size=self.agent_number)
+        self.agents['social_threshold'] = Sim.social_threshold#np.random.beta(Sim.social_threshold, Sim.beta, size=self.agent_number)
         # set type to explore
         self.agents['status'] = 0
 
@@ -49,10 +66,10 @@ class Population():
         """
         # Stupidly, 3d-ds uses y as height
         # Offset by half mapsize
-        agents = [{'x': agent[0]-self.landscape.x_size/2,
-            'z': agent[1]-self.landscape.y_size/2,
-            'y': self.landscape.getSig(agent[2], agent[3]),
-            'status': agent[9]} for agent in self.agents.tolist()]
+        agents = [{'x': agent[key_dict['x']]-self.landscape.x_size/2,
+            'z': agent[key_dict['y']]-self.landscape.y_size/2,
+            'y': self.landscape.getSig(agent[key_dict['x_patch']], agent[key_dict['y_patch']]),
+            'status': agent[key_dict['status']]} for agent in self.agents.tolist()]
         return(agents)
 
     def findPatches(self):
@@ -75,7 +92,6 @@ class Population():
 
     def move(self, i):
         agent = self.agents[i]
-        #print(agent['velocity'])
         agent['x'] += np.cos(agent['heading'])*agent['velocity']
         agent['y'] += np.sin(agent['heading'])*agent['velocity']
 
@@ -94,11 +110,12 @@ class Population():
         agent = self.agents[i]
         # self.landscape.incVisit(agent['x_patch'],agent['y_patch'])
         sig = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
+        previous_height = agent['previous_height']
         agentX = agent['x']
         agentY = agent['y']
 
         #GOING DOWNHILL?
-        if sig < agent['previous_significance']:
+        if sig < previous_height:
             #1. SOCIAL LEARNING:
             distX1 = self.agents['x']-agentX
             distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
@@ -107,7 +124,7 @@ class Population():
             distX = np.minimum(distX1,distX2)
             distY = np.minimum(distY1,distY2)
 
-            heightDeltas = self.agents['previous_significance']-sig #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
+            heightDeltas = self.agents['previous_height']-sig #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
 
             distX[i] = np.nan #10000 #don't follow yourself
             distY[i] = np.nan #10000
@@ -128,7 +145,7 @@ class Population():
                 maxAgent = self.agents[np.nanargmax(inclines)]
                 self.setHeadingToPatch(i,maxAgent['x'],maxAgent['y'])
                 agent['velocity'] = self.base_velocity
-                agent['status'] = 1
+                agent['status'] = 1 # social learning
 
             else:
                 #IF NO OTHER AGENTS IN CONE --> INDIVIDUAL SEARCH
@@ -138,18 +155,25 @@ class Population():
                 mooreElevations = nh['height']-sig
                 geqMoores = nh[mooreElevations > 0]
                 if len(geqMoores) > 0:
+                    # Select a random patch to explore
                     chosenPatch = np.random.choice(geqMoores) #choose a new (geq) patch randomdly)
+                    # If the random patch is better than the previous height, go there
                     self.setHeadingToPatch(i,chosenPatch['x'],chosenPatch['y'])
+                    agent['status'] = 0 # exploring-random
+
+                    # Else return to the previous patch
+
                 else:
                     #IF ONLY LOWER PATCHES, STOP:
                     agent['velocity'] = 0.0
+                    agent['status'] = 2 # stopped
                     #print "stopping"
 
         else: #MOVING UPHILL, NO NEED TO UPDATE HEADING
             agent['velocity'] = self.base_velocity
 
         #MOVE
-        agent['previous_significance'] = sig
+        agent['previous_height'] = sig
         self.move(i)
         self.consume(i)
 
