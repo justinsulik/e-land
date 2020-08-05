@@ -1,5 +1,5 @@
 # print("Loading population...")
-import numpy as np, math
+import numpy as np
 
 # Since the agent info is passed to the js script as a dict rather than a tuple,
 # this dict maps between the agent info keys and tuple indices
@@ -27,7 +27,7 @@ class Population():
         self.landscape = landscape
         self.agent_number = Sim.agent_number
         self.base_velocity = Sim.velocity
-        self.agents = np.zeros((self.agent_number),dtype=[('id', 'i4')
+        self.agents = np.zeros((self.agent_number),dtype=[('id', 'i4'),
                                                   ('x','f4'),('y','f4'), #position on continuum
                                                   ('x_patch','i4'),('y_patch','i4'), #position on grid
                                                   ('height','f4'),
@@ -39,8 +39,10 @@ class Population():
                                                   ('status', 'i4')])
 
         # INITIALIZE AGENTS
+        # assign index id
+        self.agents['id'] = range(self.agent_number)
         # set heading to random; velocity to sim;
-        self.agents['heading'] = np.random.uniform(0,2*math.pi,self.agent_number)
+        self.agents['heading'] = np.random.uniform(0,2*np.pi,self.agent_number)
         self.agents['velocity'] = Sim.velocity
         # have not visited any previous patch, so previous_height also 0
         self.agents['previous_height'] = 0
@@ -104,11 +106,14 @@ class Population():
     def consume(self, depletion_rate):
         for agent in self.agents:
         # agent = self.agents[i]
-            significance = self.landscape.getSig(agent['x_patch'], agent['y_patch']);
-            if significance>1:
-                new_significance = significance - depletion_rate;
+            significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
+            if significance>3:
+                new_significance = significance - depletion_rate
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
-                agent['previous_height'] = new_significance
+
+    def updateHeight(self):
+        for agent in self.agents:
+            agent['previous_height'] = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
 
     def explore(self, i):
         agent = self.agents[i]
@@ -117,25 +122,22 @@ class Population():
         agentX = agent['x']
         agentY = agent['y']
 
-        #GOING DOWNHILL?
         if current_height < agent['previous_height']:
-            #1. SOCIAL LEARNING:
+            # Is the agent going downhill?
+
+            # First check if social learning is possible:
             distX1 = self.agents['x']-agentX
             distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
             distY1 = self.agents['y']-agentY
-            distY2 = self.landscape.y_size - distY1
+            distY2 = self.landscape.y_size - distY1 #WRAPPED DISTANCE
             distX = np.minimum(distX1,distX2)
             distY = np.minimum(distY1,distY2)
-
             heightDeltas = self.agents['previous_height']-current_height #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
-
-            distX[i] = np.nan #10000 #don't follow yourself
-            distY[i] = np.nan #10000
+            distX[i] = np.nan #don't follow yourself
+            distY[i] = np.nan
 
             dist = np.sqrt(distX**2 + distY**2)
-
             denominator = dist
-
             inclines = heightDeltas / denominator
 
             #agentsInCone = self.agents[inclines > agent['social_threshold']] #CHOOSE THOSE AGENTS WHO ARE ABOVE THE REQUIRED ANGLE (TAN A) = ALPHA
@@ -210,9 +212,9 @@ class Population():
         #check for division by zero
         if cos == 0:
             if sin > 0:
-                agent['heading'] = math.pi/2
+                agent['heading'] = np.pi/2
             else:
-                agent['heading'] = 3*math.pi/2
+                agent['heading'] = 3*np.pi/2
         else:
             tan = sin / cos
             #choose the heading in the correct quadrant

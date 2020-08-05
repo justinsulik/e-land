@@ -47,11 +47,11 @@ class Landscape():
         self.archive = []
 
         # HILLS
-        self.addGaussian(3,3,1000,10)
-        self.addGaussian(20,20,500,5)
+        self.addGaussian(20,3,1000,10)
+        self.addGaussian(25,20,1000,5)
 
         # NOISE
-        self.addPerlin(Sim.noise, Sim.smoothing)
+        self.addPerlin(Sim.noise, Sim.smoothing, Sim.octaves)
 
         # EPISTEMIC MASS
         # total amount of epistemic value at start of sim
@@ -104,12 +104,12 @@ class Landscape():
             self.mooreArray[ind] = self.grid[x_wrap,y_wrap]
         return self.mooreArray
 
-    def addPerlin(self, noise, smoothing):
+    def addPerlin(self, noise, smoothing, octaves):
         """
         Add Perlin noise
         INPUT: noise (int): amplitude of noise; smoothing (int): randomness of noise
         """
-        pnf = PerlinNoiseFactory(2, octaves=3, tile=(self.x_size, self.y_size))
+        pnf = PerlinNoiseFactory(2, octaves=octaves, tile=(self.x_size, self.y_size))
         for x, y in [[x,y] for x in range(self.x_size) for y in range(self.x_size)]:
             self.incrementHeight(x,y, round(noise*pnf(x/smoothing, y/smoothing), 4))
 

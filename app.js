@@ -13,7 +13,7 @@ app.get('/', (req, res, next) => {
     let runPy = new Promise(function(resolve, reject) {
         console.log("Node: python starting...");
         const { spawn } = require('child_process');
-        const pyprog = spawn('python', ['python/sim.py', 'browser']);
+        const pyprog = spawn('python3', ['python/sim.py', 'browser']);
         let python_out = '';
 
         pyprog.stdout.on('data', function(data) {
@@ -21,6 +21,7 @@ app.get('/', (req, res, next) => {
         });
 
         pyprog.stderr.on('data', (data) => {
+            console.log("Python error!", data.toString())
             reject(data.toString());
         });
 
@@ -41,7 +42,7 @@ app.get('/', (req, res, next) => {
         });
 
     }).catch((err)=>{
-      console.log("Python error! ", err);
+      console.log("Python error! catch");
     });
 
     runPy.then((data) => {

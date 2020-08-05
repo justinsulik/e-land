@@ -1,4 +1,5 @@
 """Perlin noise implementation."""
+# -*- coding: utf-8 -*-
 # Licensed under ISC
 # from https://gist.github.com/eevee/26f547457522755cb1fb8739d0ea89a1
 # examples at https://eev.ee/blog/2016/05/29/perlin-noise/
@@ -51,8 +52,8 @@ class PerlinNoiseFactory(object):
         self.tile = tile + (0,) * dimension
         self.unbias = unbias
 
-        # For n dimensions, the range of Perlin noise is ±sqrt(n)/2; multiply
-        # by this to scale to ±1
+        # For n dimensions, the range of Perlin noise is +/-sqrt(n)/2; multiply
+        # by this to scale to +/-1
         self.scale_factor = 2 * dimension ** -0.5
 
         self.gradient = {}
@@ -141,10 +142,10 @@ class PerlinNoiseFactory(object):
             ret += self.get_plain_noise(*new_point) / o2
 
         # Need to scale n back down since adding all those extra octaves has
-        # probably expanded it beyond ±1
-        # 1 octave: ±1
-        # 2 octaves: ±1½
-        # 3 octaves: ±1¾
+        # probably expanded it beyond +/-1
+        # 1 octave: +/-1
+        # 2 octaves: +/-1.5
+        # 3 octaves: +/-1.75
         ret /= 2 - 2 ** (1 - self.octaves)
 
         if self.unbias:

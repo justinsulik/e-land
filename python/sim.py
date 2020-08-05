@@ -9,12 +9,12 @@ class SimParams():
     General parameters for the simulation
     """
     map_size = 50
-    runs = 100
+    runs = 1000
 
     # EPISTEMIC PARAMETERS
     desert = 20 #below which value is a patch considered desert (used for initial placement)
     sigThreshold = 100 #used for eProg*
-    depletion = 1 #todo
+    depletion = 0.5 #todo
 
     # HILLS
     hill_number = 2
@@ -26,15 +26,17 @@ class SimParams():
     #todo: auto space hils
 
     # NOISE PARAMETERS
-    noise = 4
+    noise = 6
     smoothing = 4
+    octaves = 4
 
     # AGENTS
-    agent_number = 10
+    agent_number = 30
     # params for beta distribution https://homepage.divms.uiowa.edu/~mbognar/applets/beta.html
     alpha = 1
     beta = 1
-    velocity = 0.8
+    velocity = 0.4
+    social_threshold = 0.8
 
 
 def runSim(params, report_type):
@@ -45,6 +47,8 @@ def runSim(params, report_type):
     for i in range(params.runs):
         for i in range(params.agent_number):
             population.explore(i)
+        population.consume(params.depletion)
+        population.updateHeight()
         report(report_type, "data", json.dumps({'landscape': landscape.reportGrid(), 'population': population.reportAgents()}))
     #plot3d(landscape)
     report(report_type, "message", "Python: sim done...")

@@ -1,10 +1,12 @@
 // based on https://bl.ocks.org/Niekes/e920c03edd7950578b8a6cded8b5a1a5
-var origin = [480, 480];
+var origin = [520, 520];
 var j = Math.pow(data[0].landscape.length, 0.5);
 var alpha = 0;
 var beta = 0;
 var hover_offset = 0.6;
-var startAngle = Math.PI/4;
+var startAngleY = 0//Math.PI/4;
+var startAngleX = Math.PI/2;//3*Math.PI/4;
+var zoom = 15;
 var svg = d3.select('svg')
   .call(d3.drag().on('drag', dragged)
   .on('start', dragStart)
@@ -14,23 +16,23 @@ var svg = d3.select('svg')
 var points, mx, my, mouseX, mouseY, agents;
 
 var surface = d3._3d()
-    .scale(10)
+    .scale(zoom)
     .x(function(d){ return d.x; })
     .y(function(d){ return d.y; })
     .z(function(d){ return d.z; })
     .origin(origin)
-    .rotateY(startAngle)
-    .rotateX(3*startAngle)
+    .rotateY(startAngleY)
+    .rotateX(startAngleX)
     .shape('SURFACE', j);
 
 var point3d = d3._3d()
-   .scale(10)
+   .scale(zoom)
    .x(function(d){ return d.x; })
    .y(function(d){ return d.y+hover_offset; })
    .z(function(d){ return d.z; })
    .origin(origin)
-   .rotateY(startAngle)
-   .rotateX(3*startAngle);
+   .rotateY(startAngleY)
+   .rotateX(startAngleX);
 
 var color = d3.scaleLinear();
 
@@ -65,10 +67,27 @@ function processAgents(data, tt){
         .attr('r', 4)
         .attr('stroke', function(d){ return "black"; })
         .attr('fill', function(d){
-          if(d.status==0){
-            return "red";
-          } else {
-            return "black";
+          switch(d.status){
+            case 0:
+              // exploring-straight line
+              return "red";
+              break;
+            case 1:
+              // social learning
+              return "black";
+              break;
+            case 2:
+              // leader
+              return "white";
+              break;
+            case 3:
+              // returning to previous patch
+              return "pink";
+              break;
+            case 4:
+              // exploring-random
+              return "indianred";
+              break;
           }
         })
         .attr('opacity', 1);
@@ -100,26 +119,35 @@ function dragEnd(){
     mouseY = d3.event.y - my + mouseY;
 }
 
-function init(data){
+function init(data, iteration){
     // clear old
     svg.selectAll('circle').remove();
     svg.selectAll('path').remove();
-    //landscape
-    points = data.landscape;
-    var yMin = d3.min(points, function(d){ return d.y; });
-    var yMax = d3.max(points, function(d){ return d.y; });
-    color.domain([yMin, yMax]);
+    // filter data for this iteration
+    points = data[iteration].landscape;
+    agents = data[iteration].population;
+    // set color for first iteration
+    if(iteration==0){
+      var yMin = d3.min(points, function(d){ return d.y; });
+      var yMax = d3.max(points, function(d){ return d.y; });
+      color.domain([yMin, yMax]);
+
+      console.log('ymin, max: ', yMin, yMax)
+    }
+
+    // display data
     processLandscape(surface(points), 0);
-    //agents
     // todo: necessary to double up on code like this? cf. above poitns
-    agents = data.population;
+
     processAgents(point3d(agents), 1000);
 }
+
+console.log("/here")
 
 function change(data){
     var iteration = 0;
     d3.interval(function(){
-      init(data[iteration]);
+      init(data, iteration);
       if(iteration<data.length-1){
         iteration += 1;
       }
