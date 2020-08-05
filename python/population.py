@@ -93,21 +93,21 @@ class Population():
         coord_new = coord_integer%limit + coord_sign*coord_decimal
         return(coord_new)
 
-    def move(self, i):
-        agent = self.agents[i]
-        agent['x'] += np.cos(agent['heading'])*agent['velocity']
-        agent['y'] += np.sin(agent['heading'])*agent['velocity']
+    def move(self):
+        for agent in self.agents:
+            agent['x'] += np.cos(agent['heading'])*agent['velocity']
+            agent['y'] += np.sin(agent['heading'])*agent['velocity']
 
-        agent['x'] = self.wrap(agent['x'],self.landscape.x_size)
-        agent['y'] = self.wrap(agent['y'],self.landscape.y_size)
-        agent['x_patch'] = int(agent['x'])
-        agent['y_patch'] = int(agent['y'])
+            agent['x'] = self.wrap(agent['x'],self.landscape.x_size)
+            agent['y'] = self.wrap(agent['y'],self.landscape.y_size)
+            agent['x_patch'] = int(agent['x'])
+            agent['y_patch'] = int(agent['y'])
 
     def consume(self, depletion_rate):
         for agent in self.agents:
         # agent = self.agents[i]
             significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
-            if significance>3:
+            if significance > depletion_rate:
                 new_significance = significance - depletion_rate
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
 
@@ -115,54 +115,50 @@ class Population():
         for agent in self.agents:
             agent['previous_height'] = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
 
+    def checkSocialLearning(self, i):
+        # Find out the amounts that could be learned (as inclines) from all other agents
+        agent = self.agents[i]
+        agentX = agent['x']
+        agentY = agent['y']
+        distX1 = self.agents['x']-agentX
+        distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
+        distY1 = self.agents['y']-agentY
+        distY2 = self.landscape.y_size - distY1 #WRAPPED DISTANCE
+        distX = np.minimum(distX1,distX2)
+        distY = np.minimum(distY1,distY2)
+        heightDeltas = self.agents['previous_height']-self.landscape.getSig(agent['x_patch'],agent['y_patch']) #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
+        distX[i] = np.nan #don't follow yourself
+        distY[i] = np.nan
+
+        dist = np.sqrt(distX**2 + distY**2)
+        denominator = dist
+        inclines = heightDeltas / denominator
+        return(inclines)
+
     def explore(self, i):
         agent = self.agents[i]
         # self.landscape.incVisit(agent['x_patch'],agent['y_patch'])
         current_height = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
-        agentX = agent['x']
-        agentY = agent['y']
 
         if current_height < agent['previous_height']:
             # Is the agent going downhill?
 
-            # First check if social learning is possible:
-            distX1 = self.agents['x']-agentX
-            distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
-            distY1 = self.agents['y']-agentY
-            distY2 = self.landscape.y_size - distY1 #WRAPPED DISTANCE
-            distX = np.minimum(distX1,distX2)
-            distY = np.minimum(distY1,distY2)
-            heightDeltas = self.agents['previous_height']-current_height #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
-            distX[i] = np.nan #don't follow yourself
-            distY[i] = np.nan
-
-            dist = np.sqrt(distX**2 + distY**2)
-            denominator = dist
-            inclines = heightDeltas / denominator
-
-            #agentsInCone = self.agents[inclines > agent['social_threshold']] #CHOOSE THOSE AGENTS WHO ARE ABOVE THE REQUIRED ANGLE (TAN A) = ALPHA
+            # Find out out much agent could learn
+            inclines = self.checkSocialLearning(i)
             maxIncline = np.nanmax(inclines) #max social incline
-            #print "maxIncline", maxIncline
-
+            # Check if that amount is above threshold
             if maxIncline > agent['social_threshold']:
-                # Choose randomly from among the max inclines
+                # If yes, identify best candidate to follow
+                # (choose randomly if tie)
                 maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
-                if self.landscape.getSig(maxAgent['x_patch'],maxAgent['y_patch']) > 0:
-                    # If the maxAgent is above ground level 0, follow
                     self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
                     agent['velocity'] = self.base_velocity
                     agent['status'] = 1 # social learning
-                else:
-                   self.exploreLocalArea(i)
-
             else:
                 self.exploreLocalArea(i)
 
         else: #MOVING UPHILL, NO NEED TO UPDATE HEADING
             agent['velocity'] = self.base_velocity
-
-        #MOVE
-        self.move(i)
 
     def exploreLocalArea(self, i):
         # Since there is no suitable agent to follow:
@@ -178,7 +174,7 @@ class Population():
             # Select a random higher patch to check
             chosenPatch = np.random.choice(geqMoores)
             self.setHeadingToPatch(i,chosenPatch['x'],chosenPatch['y'])
-            agent['status'] = 4 # exploring
+            agent['status'] = 4 # exploring-local
         else:
         # If no patches are higher, pick a completely random direction
            agent['heading'] = np.random.uniform(0,2*np.pi)

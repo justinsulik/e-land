@@ -47,8 +47,8 @@ class Landscape():
         self.archive = []
 
         # HILLS
-        self.addGaussian(20,3,1000,10)
-        self.addGaussian(25,20,1000,5)
+        self.addGaussian(0,0,1000,10)
+        self.addGaussian(25,25,1000,5)
 
         # NOISE
         self.addPerlin(Sim.noise, Sim.smoothing, Sim.octaves)

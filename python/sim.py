@@ -36,7 +36,7 @@ class SimParams():
     alpha = 1
     beta = 1
     velocity = 0.4
-    social_threshold = 0.8
+    social_threshold = 0.1
 
 
 def runSim(params, report_type):
@@ -47,6 +47,7 @@ def runSim(params, report_type):
     for i in range(params.runs):
         for i in range(params.agent_number):
             population.explore(i)
+        population.move()
         population.consume(params.depletion)
         population.updateHeight()
         report(report_type, "data", json.dumps({'landscape': landscape.reportGrid(), 'population': population.reportAgents()}))

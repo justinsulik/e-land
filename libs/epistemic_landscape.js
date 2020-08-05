@@ -4,8 +4,8 @@ var j = Math.pow(data[0].landscape.length, 0.5);
 var alpha = 0;
 var beta = 0;
 var hover_offset = 0.6;
-var startAngleY = 0//Math.PI/4;
-var startAngleX = Math.PI/2;//3*Math.PI/4;
+var startAngleY = Math.PI/4; // for overhead view: 0
+var startAngleX = 3*Math.PI/4; //for overhead view: Math.PI/2
 var zoom = 15;
 var svg = d3.select('svg')
   .call(d3.drag().on('drag', dragged)
@@ -81,11 +81,11 @@ function processAgents(data, tt){
               return "white";
               break;
             case 3:
-              // returning to previous patch
+              // completely lost
               return "pink";
               break;
             case 4:
-              // exploring-random
+              // exploring-local
               return "indianred";
               break;
           }
@@ -131,8 +131,6 @@ function init(data, iteration){
       var yMin = d3.min(points, function(d){ return d.y; });
       var yMax = d3.max(points, function(d){ return d.y; });
       color.domain([yMin, yMax]);
-
-      console.log('ymin, max: ', yMin, yMax)
     }
 
     // display data
@@ -141,8 +139,6 @@ function init(data, iteration){
 
     processAgents(point3d(agents), 1000);
 }
-
-console.log("/here")
 
 function change(data){
     var iteration = 0;
@@ -153,9 +149,3 @@ function change(data){
       }
     }, 100);
 }
-
-// d3.selectAll('button').on('click', ()=>{
-//   console.log(i)
-//   i += 1
-//   change(data, i)
-// });
