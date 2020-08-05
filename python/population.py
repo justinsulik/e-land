@@ -112,13 +112,13 @@ class Population():
     def explore(self, i):
         agent = self.agents[i]
         # self.landscape.incVisit(agent['x_patch'],agent['y_patch'])
-        sig = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
+        current_height = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
         previous_height = agent['previous_height']
         agentX = agent['x']
         agentY = agent['y']
 
         #GOING DOWNHILL?
-        if sig < previous_height:
+        if current_height < previous_height:
             #1. SOCIAL LEARNING:
             distX1 = self.agents['x']-agentX
             distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
@@ -127,7 +127,7 @@ class Population():
             distX = np.minimum(distX1,distX2)
             distY = np.minimum(distY1,distY2)
 
-            heightDeltas = self.agents['previous_height']-sig #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
+            heightDeltas = self.agents['previous_height']-current_height #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
 
             distX[i] = np.nan #10000 #don't follow yourself
             distY[i] = np.nan #10000
@@ -144,18 +144,27 @@ class Population():
             #print "maxIncline", maxIncline
 
             if maxIncline > agent['social_threshold']:
-
-                maxAgent = self.agents[np.nanargmax(inclines)]
-                self.setHeadingToPatch(i,maxAgent['x'],maxAgent['y'])
+                # Choose randomly from among the max inclines
+                maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
+                #if maxAgent['height'] > 0:
+                self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
                 agent['velocity'] = self.base_velocity
                 agent['status'] = 1 # social learning
+                #else:
+                    #self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
+                    ## the problem was that it's easy to get into a negative. in which case even an agent with height 0
+                    # will be worth following. doesn't explain why always running right to left, though
+                    # if in a hole, only look at people nearby?
+                    # this setup stops exploration pretty quickly. need some way to just maverick around.
+                #    agent['velocity'] = 0#self.base_velocity
+                #    agent['status'] = 2 # social learning
 
             else:
                 #IF NO OTHER AGENTS IN CONE --> INDIVIDUAL SEARCH
                 nh = self.landscape.getMooreNeighborhood(agent['x_patch'],agent['y_patch'])
-
                 #compare heights
-                mooreElevations = nh['height']-sig
+                mooreElevations = nh['height']-current_height
+
                 geqMoores = nh[mooreElevations > 0]
                 if len(geqMoores) > 0:
                     # Select a random patch to explore
@@ -208,8 +217,10 @@ class Population():
 
         #check for division by zero
         if cos == 0:
-            if sin > 0: agent['heading'] = math.pi/2
-            else: agent['heading'] = 3*math.pi/2
+            if sin > 0:
+                agent['heading'] = math.pi/2
+            else:
+                agent['heading'] = 3*math.pi/2
         else:
             tan = sin / cos
             #choose the heading in the correct quadrant
