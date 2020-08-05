@@ -9,15 +9,15 @@ class Landscape():
     Class describing the epistemic landscape consisting of a number of grid 'patches'
     """
 
-    def __init__(self,Sim):
+    def __init__(self,params):
         """
         Required params: x_size,y_size,depletion,hills,hill_width,noise,smoothing
         """
         # x_size, y_size (int): size of grid FROM ORIGIN IN CENTER
         # depletion (float in [0,1]): depletion rate
-        self.x_size = Sim.map_size
-        self.y_size = Sim.map_size
-        self.depletion = Sim.depletion
+        self.x_size = params.map_size
+        self.y_size = params.map_size
+        self.depletion = params.depletion
         self.res = 10
 
         # GRID
@@ -47,15 +47,16 @@ class Landscape():
         self.archive = []
 
         # HILLS
-        self.addGaussian(0,0,1000,10)
-        self.addGaussian(25,25,1000,5)
+        self.addGaussian(0,0,600,3)
+        self.addGaussian(25,25,600,3)
 
         # NOISE
-        self.addPerlin(Sim.noise, Sim.smoothing, Sim.octaves)
+        self.addPerlin(params.noise, params.smoothing, params.octaves)
 
         # EPISTEMIC MASS
-        # total amount of epistemic value at start of sim
-        self.eMassTotal = np.sum(self.grid['height'])
+        # total amount of epistemic value at start of simulation
+        self.epistemic_mass = self.epistemicMass()
+        print(self.epistemic_mass)
 
     def reportGrid(self):
         """
@@ -120,3 +121,6 @@ class Landscape():
             # allow wrap around
             height = max([gaussian.pdf([x,y]),gaussian.pdf([x-self.x_size,y]),gaussian.pdf([x,y-self.y_size]),gaussian.pdf([x-self.x_size,y-self.y_size])])
             self.incrementHeight(x,y,round(amplitude*height,4))
+
+    def epistemicMass(self):
+        return(np.sum(self.grid['height'][self.grid['height']>0]))

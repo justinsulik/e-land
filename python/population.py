@@ -151,9 +151,9 @@ class Population():
                 # If yes, identify best candidate to follow
                 # (choose randomly if tie)
                 maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
-                    self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
-                    agent['velocity'] = self.base_velocity
-                    agent['status'] = 1 # social learning
+                self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
+                agent['velocity'] = self.base_velocity
+                agent['status'] = 1 # social learning
             else:
                 self.exploreLocalArea(i)
 

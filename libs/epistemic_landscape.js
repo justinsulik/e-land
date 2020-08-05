@@ -82,7 +82,7 @@ function processAgents(data, tt){
               break;
             case 3:
               // completely lost
-              return "pink";
+              return "hotpink";
               break;
             case 4:
               // exploring-local

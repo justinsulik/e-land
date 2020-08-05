@@ -2,14 +2,14 @@ import sys
 from landscape import Landscape
 from population import Population
 from plot import plot3d
-import json
+import json, pandas as pd
 
 class SimParams():
     """
     General parameters for the simulation
     """
     map_size = 50
-    runs = 1000
+    time_steps = 10
 
     # EPISTEMIC PARAMETERS
     desert = 20 #below which value is a patch considered desert (used for initial placement)
@@ -28,37 +28,43 @@ class SimParams():
     # NOISE PARAMETERS
     noise = 6
     smoothing = 4
-    octaves = 4
+    octaves = 2
 
     # AGENTS
-    agent_number = 30
+    agent_number = 60
     # params for beta distribution https://homepage.divms.uiowa.edu/~mbognar/applets/beta.html
     alpha = 1
     beta = 1
     velocity = 0.4
-    social_threshold = 0.1
+    social_threshold = 10
 
 
-def runSim(params, report_type):
+def runsim(params, report_type):
     report(report_type, 'message', "Python: sim starting...")
+    save_data = {}
     landscape = Landscape(params)
+    total_epistemic_mass = landscape.epistemicMass()
     population = Population(landscape, params)
     report(report_type, "data", json.dumps({'landscape': landscape.reportGrid(), 'population': population.reportAgents()}))
-    for i in range(params.runs):
+    for step in range(params.time_steps):
         for i in range(params.agent_number):
             population.explore(i)
         population.move()
         population.consume(params.depletion)
+        save_data[step] = {'mass': 1 - landscape.epistemicMass()/total_epistemic_mass, 'social': params.social_threshold}
         population.updateHeight()
         report(report_type, "data", json.dumps({'landscape': landscape.reportGrid(), 'population': population.reportAgents()}))
     #plot3d(landscape)
     report(report_type, "message", "Python: sim done...")
+    if report_type == 'terminal':
+        data_out = pd.DataFrame.from_dict(save_data, orient="index")
+        print(data_out)
 
-def report(report_type, type, data):
+def report(report_type, data_type, data):
     if report_type == 'browser':
-        print(json.dumps({'type': type, 'data': data}))
+        print(json.dumps({'type': data_type, 'data': data}))
         sys.stdout.flush()
-    elif type != 'data':
+    elif data_type != 'data':
         print(data)
 
 if __name__ == "__main__":
@@ -67,7 +73,7 @@ if __name__ == "__main__":
     except:
         report_type = 'terminal'
     report(report_type, 'message', 'reporting style: '+report_type)
-    runSim(SimParams, report_type)
+    runsim(SimParams, report_type)
 
 # print("Python: script done...")
 # print(json.dumps({"message": "Python: script done..."}))

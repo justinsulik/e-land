@@ -29,7 +29,7 @@ class PerlinNoiseFactory(object):
     the fly as necessary.
     """
 
-    def __init__(self, dimension, octaves=1, tile=(), unbias=False):
+    def __init__(self, dimension, octaves, tile=(), unbias=False):
         """Create a new Perlin noise factory in the given number of dimensions,
         which should be an integer and at least 1.
 
