@@ -3,18 +3,19 @@ import numpy as np, math
 
 # Since the agent info is passed to the js script as a dict rather than a tuple,
 # this dict maps between the agent info keys and tuple indices
-key_dict = {'x': 0,
-    'y': 1,
-    'x_patch': 2,
-    'y_patch': 3,
-    'height': 4,
-    'heading': 5,
-    'velocity': 6,
-    'previous_x_patch': 7,
-    'previous_y_patch': 8,
-    'previous_height': 9,
-    'social_threshold': 10,
-    'status': 11}
+key_dict = {'id': 0,
+    'x': 1,
+    'y': 2,
+    'x_patch': 3,
+    'y_patch': 4,
+    'height': 5,
+    'heading': 6,
+    'velocity': 7,
+    'previous_x_patch': 8,
+    'previous_y_patch': 9,
+    'previous_height': 10,
+    'social_threshold': 11,
+    'status': 12}
 
 
 class Population():
@@ -26,7 +27,8 @@ class Population():
         self.landscape = landscape
         self.agent_number = Sim.agent_number
         self.base_velocity = Sim.velocity
-        self.agents = np.zeros((self.agent_number),dtype=[('x','f4'),('y','f4'), #position on continuum
+        self.agents = np.zeros((self.agent_number),dtype=[('id', 'i4')
+                                                  ('x','f4'),('y','f4'), #position on continuum
                                                   ('x_patch','i4'),('y_patch','i4'), #position on grid
                                                   ('height','f4'),
                                                   ('heading','f4'),
@@ -89,7 +91,6 @@ class Population():
         coord_new = coord_integer%limit + coord_sign*coord_decimal
         return(coord_new)
 
-
     def move(self, i):
         agent = self.agents[i]
         agent['x'] += np.cos(agent['heading'])*agent['velocity']
@@ -100,12 +101,12 @@ class Population():
         agent['x_patch'] = int(agent['x'])
         agent['y_patch'] = int(agent['y'])
 
-    def consume(self):
+    def consume(self, depletion_rate):
         for agent in self.agents:
         # agent = self.agents[i]
             significance = self.landscape.getSig(agent['x_patch'], agent['y_patch']);
             if significance>1:
-                new_significance = significance - 1;
+                new_significance = significance - depletion_rate;
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
                 agent['previous_height'] = new_significance
 
@@ -113,12 +114,11 @@ class Population():
         agent = self.agents[i]
         # self.landscape.incVisit(agent['x_patch'],agent['y_patch'])
         current_height = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
-        previous_height = agent['previous_height']
         agentX = agent['x']
         agentY = agent['y']
 
         #GOING DOWNHILL?
-        if current_height < previous_height:
+        if current_height < agent['previous_height']:
             #1. SOCIAL LEARNING:
             distX1 = self.agents['x']-agentX
             distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
@@ -139,56 +139,48 @@ class Population():
             inclines = heightDeltas / denominator
 
             #agentsInCone = self.agents[inclines > agent['social_threshold']] #CHOOSE THOSE AGENTS WHO ARE ABOVE THE REQUIRED ANGLE (TAN A) = ALPHA
-
             maxIncline = np.nanmax(inclines) #max social incline
             #print "maxIncline", maxIncline
 
             if maxIncline > agent['social_threshold']:
                 # Choose randomly from among the max inclines
                 maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
-                #if maxAgent['height'] > 0:
-                self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
-                agent['velocity'] = self.base_velocity
-                agent['status'] = 1 # social learning
-                #else:
-                    #self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
-                    ## the problem was that it's easy to get into a negative. in which case even an agent with height 0
-                    # will be worth following. doesn't explain why always running right to left, though
-                    # if in a hole, only look at people nearby?
-                    # this setup stops exploration pretty quickly. need some way to just maverick around.
-                #    agent['velocity'] = 0#self.base_velocity
-                #    agent['status'] = 2 # social learning
+                if self.landscape.getSig(maxAgent['x_patch'],maxAgent['y_patch']) > 0:
+                    # If the maxAgent is above ground level 0, follow
+                    self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
+                    agent['velocity'] = self.base_velocity
+                    agent['status'] = 1 # social learning
+                else:
+                   self.exploreLocalArea(i)
 
             else:
-                #IF NO OTHER AGENTS IN CONE --> INDIVIDUAL SEARCH
-                nh = self.landscape.getMooreNeighborhood(agent['x_patch'],agent['y_patch'])
-                #compare heights
-                mooreElevations = nh['height']-current_height
-
-                geqMoores = nh[mooreElevations > 0]
-                if len(geqMoores) > 0:
-                    # Select a random patch to explore
-                    chosenPatch = np.random.choice(geqMoores) #choose a new (geq) patch randomdly)
-                    # If the random patch is better than the previous height, go there
-                    if chosenPatch['height'] >= previous_height:
-                        self.setHeadingToPatch(i,chosenPatch['x'],chosenPatch['y'])
-                        agent['status'] = 4 # exploring-random
-                    else:
-                        self.setHeadingToPatch(i, agent['previous_x_patch'], agent['previous_y_patch'])
-                        agent['status'] = 3 # exploring-return to previous
-
-
-                else:
-                    #IF ONLY LOWER PATCHES, STOP:
-                    agent['velocity'] = 0.0
-                    agent['status'] = 2 # stopped
-                    #print "stopping"
+                self.exploreLocalArea(i)
 
         else: #MOVING UPHILL, NO NEED TO UPDATE HEADING
             agent['velocity'] = self.base_velocity
 
         #MOVE
         self.move(i)
+
+    def exploreLocalArea(self, i):
+        # Since there is no suitable agent to follow:
+        # First check Moore neighborhood for a higher patch
+        # If no higher patches, pick a random direction
+        agent = self.agents[i]
+        current_height = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
+        neigborhood = self.landscape.getMooreNeighborhood(agent['x_patch'],agent['y_patch'])
+        # Compare heights
+        mooreElevations = neigborhood['height']-current_height
+        geqMoores = neigborhood[mooreElevations > 0] #geq: greater than or equal to
+        if len(geqMoores) > 0:
+            # Select a random higher patch to check
+            chosenPatch = np.random.choice(geqMoores)
+            self.setHeadingToPatch(i,chosenPatch['x'],chosenPatch['y'])
+            agent['status'] = 4 # exploring
+        else:
+        # If no patches are higher, pick a completely random direction
+           agent['heading'] = np.random.uniform(0,2*np.pi)
+           agent['status'] = 3 # completely lost
 
 
     def setHeadingToPatch(self,i,xTarg,yTarg):
