@@ -2,8 +2,6 @@ from perlin import PerlinNoiseFactory
 import numpy as np
 from scipy.stats import multivariate_normal
 
-# print("Loading landscape...")
-
 class Landscape():
     """
     Class describing the epistemic landscape consisting of a number of grid 'patches'
@@ -34,7 +32,6 @@ class Landscape():
         )
 
         # COORDINATES
-        # centre of the landscape is (0,0)
         self.grid['x'] = np.indices(self.grid.shape)[0]
         self.grid['y'] = np.indices(self.grid.shape)[1]
 
@@ -43,12 +40,11 @@ class Landscape():
         self.mooreArray = np.zeros(8,dtype =[('x','i4'),('y','i4'),("height", 'f4'),("visited", 'i4')])
         self.mooreIndList = ((-1,-1),(-1,0),(-1,+1),(0,-1),(0,+1),(+1,-1),(+1,0),(+1,+1))
 
-        # DATA SAVING
-        self.archive = []
-
         # HILLS
-        self.addGaussian(0,0,600,3)
-        self.addGaussian(25,25,600,3)
+        for i in range(params.hill_number):
+            hill_center_x = i*params.map_size/params.hill_number
+            hill_center_y = i*params.map_size/params.hill_number
+            self.addGaussian(hill_center_x,hill_center_y,params.hill_width/params.noise*1000,params.hill_width)
 
         # NOISE
         self.addPerlin(params.noise, params.smoothing, params.octaves)
@@ -56,7 +52,6 @@ class Landscape():
         # EPISTEMIC MASS
         # total amount of epistemic value at start of simulation
         self.epistemic_mass = self.epistemicMass()
-        print(self.epistemic_mass)
 
     def reportGrid(self):
         """

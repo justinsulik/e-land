@@ -1,4 +1,3 @@
-# print("Loading population...")
 import numpy as np
 
 # Since the agent info is passed to the js script as a dict rather than a tuple,
@@ -47,7 +46,8 @@ class Population():
         # have not visited any previous patch, so previous_height also 0
         self.agents['previous_height'] = 0
         # set social_threshold according to beta distribution (1,1 = uniform)
-        self.agents['social_threshold'] = Sim.social_threshold#np.random.beta(Sim.social_threshold, Sim.beta, size=self.agent_number)
+        #self.agents['social_threshold'] = np.random.beta(Sim.alpha, Sim.beta, size=self.agent_number)
+        self.agents['social_threshold'] = Sim.social_threshold
         # set type to explore
         self.agents['status'] = 0
 
