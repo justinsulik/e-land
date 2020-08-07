@@ -35,7 +35,8 @@ class Population():
                                                   ('previous_x_patch','i4'),('previous_y_patch','i4'),
                                                   ('previous_height','f4'),
                                                   ('social_threshold','f4'),
-                                                  ('status', 'i4')])
+                                                  ('status', 'i4'),
+                                                  ('stubbornness', 'i4')])
 
         # INITIALIZE AGENTS
         # assign index id
@@ -48,8 +49,10 @@ class Population():
         # set social_threshold according to beta distribution (1,1 = uniform)
         #self.agents['social_threshold'] = np.random.beta(Sim.alpha, Sim.beta, size=self.agent_number)
         self.agents['social_threshold'] = Sim.social_threshold
+        self.agents['stubbornness'] = Sim.stubbornness
         # set type to explore
         self.agents['status'] = 0
+        self.mooreChoices = {x:0 for x in range(8)}
 
         #PLACE ALL AGENTS IN THE DESERT
         for agent in self.agents:
@@ -79,8 +82,8 @@ class Population():
     def findPatches(self):
         #end of each round, calculate patches for all agents, reduces unnecessary np.round()
         #update height while at it
-        self.agents['x_patch'] = np.round(self.agents['x'])
-        self.agents['y_patch'] = np.round(self.agents['y'])
+        self.agents['x_patch'] = int(self.agents['x'])
+        self.agents['y_patch'] = int(self.agents['y'])
 
     def wrap(self,coord,limit):
         """
@@ -89,7 +92,7 @@ class Population():
         """
         coord_integer = np.floor(coord)
         coord_decimal = coord%coord_integer if coord_integer != 0 else coord
-        coord_sign = 1 if coord >= 0 else -1
+        coord_sign = 1 if coord > 0 else -1
         coord_new = coord_integer%limit + coord_sign*coord_decimal
         return(coord_new)
 
@@ -109,7 +112,9 @@ class Population():
             significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
             if significance > depletion_rate:
                 new_significance = significance - depletion_rate
-                self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
+            else:
+                new_significance = 0
+            self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
 
     def updateHeight(self):
         for agent in self.agents:
@@ -124,8 +129,8 @@ class Population():
         distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
         distY1 = self.agents['y']-agentY
         distY2 = self.landscape.y_size - distY1 #WRAPPED DISTANCE
-        distX = np.minimum(distX1,distX2)
-        distY = np.minimum(distY1,distY2)
+        distX = np.minimum(distX2,distX1)
+        distY = np.minimum(distY2,distY1)
         heightDeltas = self.agents['previous_height']-self.landscape.getSig(agent['x_patch'],agent['y_patch']) #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
         distX[i] = np.nan #don't follow yourself
         distY[i] = np.nan
@@ -135,30 +140,38 @@ class Population():
         inclines = heightDeltas / denominator
         return(inclines)
 
-    def explore(self, i):
+    def goneTooFarDown(self, i):
+        # See if the agent is doing uphill or downhill.
+        # And if downhill, if it's too far downhill to be acceptable given the agents stubbornness value
         agent = self.agents[i]
-        # self.landscape.incVisit(agent['x_patch'],agent['y_patch'])
         current_height = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
+        # Is the agent going downhill, more than what is tolerated by their stubborness?
+        if current_height < agent['previous_height'] - agent['stubbornness']:
+            return True
+        else:
+            return False
 
-        if current_height < agent['previous_height']:
-            # Is the agent going downhill?
-
-            # Find out out much agent could learn
-            inclines = self.checkSocialLearning(i)
-            maxIncline = np.nanmax(inclines) #max social incline
-            # Check if that amount is above threshold
-            if maxIncline > agent['social_threshold']:
-                # If yes, identify best candidate to follow
-                # (choose randomly if tie)
-                maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
-                self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
-                agent['velocity'] = self.base_velocity
-                agent['status'] = 1 # social learning
+    def explore(self):
+        # self.landscape.incVisit(agent['x_patch'],agent['y_patch'])
+        for i, agent in enumerate(self.agents):
+            intolerable_decrease = self.goneTooFarDown(i)
+            agent = self.agents[i]
+            if intolerable_decrease:
+                # Find out out much agent could learn
+                inclines = self.checkSocialLearning(i)
+                maxIncline = np.nanmax(inclines) #max social incline
+                # Check if that amount is above threshold
+                if maxIncline > agent['social_threshold']:
+                    # If yes, identify best candidate to follow
+                    # (choose randomly if tie)
+                    maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
+                    self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
+                    agent['status'] = 1 # social learning
+                else:
+                    self.exploreLocalArea(i)
             else:
-                self.exploreLocalArea(i)
+                agent['status'] = 0
 
-        else: #MOVING UPHILL, NO NEED TO UPDATE HEADING
-            agent['velocity'] = self.base_velocity
 
     def exploreLocalArea(self, i):
         # Since there is no suitable agent to follow:
@@ -166,18 +179,24 @@ class Population():
         # If no higher patches, pick a random direction
         agent = self.agents[i]
         current_height = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
-        neigborhood = self.landscape.getMooreNeighborhood(agent['x_patch'],agent['y_patch'])
+        neighborhood = self.landscape.getMooreNeighborhood(agent['x_patch'],agent['y_patch'])
         # Compare heights
-        mooreElevations = neigborhood['height']-current_height
-        geqMoores = neigborhood[mooreElevations > 0] #geq: greater than or equal to
+        mooreElevations = neighborhood['height']-current_height
+        geqMoores = neighborhood[mooreElevations >= 0] #geq: greater than or equal to
+
         if len(geqMoores) > 0:
             # Select a random higher patch to check
             chosenPatch = np.random.choice(geqMoores)
+            # if agent['x_patch'] = chosenPatch['x_patch']:
+            #     if agent['y'] < chosenPatch['y']:
+            #
+            # agent['y_patch']
+            #agent['heading'] = np.random.uniform(0,2*np.pi)
             self.setHeadingToPatch(i,chosenPatch['x'],chosenPatch['y'])
             agent['status'] = 4 # exploring-local
         else:
         # If no patches are higher, pick a completely random direction
-           agent['heading'] = np.random.uniform(0,2*np.pi)
+           #agent['heading'] = np.random.uniform(0,2*np.pi)
            agent['status'] = 3 # completely lost
 
 
@@ -193,7 +212,7 @@ class Population():
         xTarget[0] = xTarg-self.landscape.x_size
         xTarget[1] = xTarg #the actual point
         xTarget[2] = xTarg+self.landscape.x_size #projection to the right
-        cosArray = xTarget-agent['x']
+        cosArray = xTarget-agent['x_patch'] 
         minInd = np.argmin(np.absolute(cosArray)) #get index for the point at shortest distance
         cos = cosArray[minInd]
 
@@ -201,7 +220,7 @@ class Population():
         yTarget[0] = yTarg-self.landscape.y_size
         yTarget[1] = yTarg #the actual point
         yTarget[2] = yTarg+self.landscape.y_size
-        sinArray = yTarget-agent['y']
+        sinArray = yTarget-agent['y_patch']
         minInd = np.argmin(np.absolute(sinArray)) #get index for the point at shortest distance
         sin = sinArray[minInd]
 
