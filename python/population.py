@@ -36,7 +36,7 @@ class Population():
                                                   ('previous_height','f4'),
                                                   ('social_threshold','f4'),
                                                   ('status', 'i4'),
-                                                  ('stubbornness', 'i4')])
+                                                  ('tolerance', 'i4')])
 
         # INITIALIZE AGENTS
         # assign index id
@@ -49,7 +49,7 @@ class Population():
         # set social_threshold according to beta distribution (1,1 = uniform)
         #self.agents['social_threshold'] = np.random.beta(Sim.alpha, Sim.beta, size=self.agent_number)
         self.agents['social_threshold'] = Sim.social_threshold
-        self.agents['stubbornness'] = Sim.stubbornness
+        self.agents['tolerance'] = Sim.tolerance
         # set type to explore
         self.agents['status'] = 0
         self.mooreChoices = {x:0 for x in range(8)}
@@ -112,9 +112,9 @@ class Population():
             significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
             if significance > depletion_rate:
                 new_significance = significance - depletion_rate
-            else:
-                new_significance = 0
-            self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
+            # else:
+            #     new_significance = 0 # No! fills in holes
+                self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
 
     def updateHeight(self):
         for agent in self.agents:
@@ -142,11 +142,11 @@ class Population():
 
     def goneTooFarDown(self, i):
         # See if the agent is doing uphill or downhill.
-        # And if downhill, if it's too far downhill to be acceptable given the agents stubbornness value
+        # And if downhill, if it's too far downhill to be acceptable given the agents tolerance value
         agent = self.agents[i]
         current_height = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
-        # Is the agent going downhill, more than what is tolerated by their stubborness?
-        if current_height < agent['previous_height'] - agent['stubbornness']:
+        # Is the agent going downhill, more than what is within their tolerance?
+        if current_height < agent['previous_height'] - agent['tolerance']:
             return True
         else:
             return False
@@ -212,7 +212,7 @@ class Population():
         xTarget[0] = xTarg-self.landscape.x_size
         xTarget[1] = xTarg #the actual point
         xTarget[2] = xTarg+self.landscape.x_size #projection to the right
-        cosArray = xTarget-agent['x_patch'] 
+        cosArray = xTarget-agent['x_patch']
         minInd = np.argmin(np.absolute(cosArray)) #get index for the point at shortest distance
         cos = cosArray[minInd]
 
