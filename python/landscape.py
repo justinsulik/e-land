@@ -51,7 +51,7 @@ class Landscape():
 
         # EPISTEMIC MASS
         # total amount of epistemic value at start of simulation
-        self.epistemic_mass = self.epistemicMass()
+        self.total_epistemic_mass = self.epistemicMass()
 
     def reportGrid(self):
         """
@@ -110,7 +110,9 @@ class Landscape():
             self.incrementHeight(x,y, round(noise*pnf(x/smoothing, y/smoothing), 4))
 
     def addGaussian(self,x_center,y_center,amplitude,sd):
-        # todo: wrap around
+        """
+        Generate some hills (from random normal distribution) at specified location
+        """
         gaussian = multivariate_normal(mean=[x_center,y_center], cov=[[sd,0],[0,sd]])
         for x, y in [[x,y] for x in range(self.x_size) for y in range(self.x_size)]:
             # allow wrap around
@@ -118,4 +120,8 @@ class Landscape():
             self.incrementHeight(x,y,round(amplitude*height,4))
 
     def epistemicMass(self):
+        # Current epistemic mass remaining
         return(np.sum(self.grid['height'][self.grid['height']>0]))
+
+    def epistemicMassDiscovered(self):
+        return(round(1 - self.epistemicMass()/self.total_epistemic_mass, 4))

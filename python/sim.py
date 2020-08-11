@@ -1,15 +1,15 @@
-import sys
+import sys, os, re
 from landscape import Landscape
 from population import Population
 from plot import plot3d
 import json, pandas as pd, numpy as np
 
-class SimParams():
+class GlobalParams():
     """
-    General parameters for the simulation
+    General parameters for the run of simulations
     """
     map_size = 50
-    time_steps = 1000
+    timesteps = 10
 
     # EPISTEMIC PARAMETERS
     desert = 10 #below which value is a patch considered desert (used for initial placement)
@@ -28,78 +28,107 @@ class SimParams():
 
     # AGENTS
     agent_number = 40
-    # params for beta distribution https://homepage.divms.uiowa.edu/~mbognar/applets/beta.html
+    velocity = 0.4
+
     alpha = 1
     beta = 1
-    velocity = 0.4
     social_threshold = 1
     tolerance = 0
 
+class Simulation():
+    """
+    Class for an individual simulation run, combining global parameters with run-specific parameters
+    """
 
-def runsim(params, report_type, save=False):
-    report(report_type, 'message', "Python: sim starting...")
-    save_data = {}
-    landscape = Landscape(params)
-    total_epistemic_mass = landscape.epistemicMass()
-    population = Population(landscape, params)
-    report(report_type, "data", json.dumps({'landscape': landscape.reportGrid(), 'population': population.reportAgents()}))
-    for step in range(params.time_steps):
-        population.explore()
-        population.move()
-        population.consume(params.depletion)
-        population.updateHeight()
-        save_data[len(save_data)] = {'timestep': step, 'mass': 1 - landscape.epistemicMass()/total_epistemic_mass, 'alpha': params.alpha}
-        report(report_type, "data", json.dumps({'landscape': landscape.reportGrid(), 'population': population.reportAgents()}))
-    report(report_type, "message", "Python: sim done...")
-    if save:
-        data_out = pd.DataFrame.from_dict(save_data, orient="index")
+    def __init__(self,global_params,run_params,report_type):
+        self.params = global_params
+        self.report_type = report_type
+        self.changed = []
+        for param_name in run_params:
+            # Keep track of which parameters are specific to this run
+            self.changed.append(param_name)
+            # And update the parameter object to reflect them
+            setattr(self.params, param_name, run_params[param_name])
+
+    def run(self):
+        self.report('message', "Python: sim starting...")
+        self.data = {}
+        self.landscape = Landscape(self.params)
+        self.population = Population(self.landscape, self.params)
+
+        for timestep in range(self.params.timesteps):
+            self.updateData(timestep)
+            self.population.explore()
+            self.population.move()
+            self.population.consume(self.params.depletion)
+            self.population.updateHeight()
+
+        self.report('message', "Python: sim done...")
+
+    def updateData(self, timestep):
+        # Before each time step, store the current state of the simulation
+        self.report("data", json.dumps({'landscape': self.landscape.reportGrid(), 'population': self.population.reportAgents()}))
+        step_data = {'timestep': timestep,
+            'mass': self.landscape.epistemicMassDiscovered()}
+        if self.report_type != 'browser':
+            self.data[timestep] = step_data
+
+    def getData(self):
+        # Include whatever variables have changed in this specific run in the run's data
+        data_out = pd.DataFrame.from_dict(self.data, orient="index")
+        for param_name in self.changed:
+            data_out[param_name] = getattr(self.params, param_name)
         return(data_out)
 
-def report(report_type, data_type, data):
-    if report_type != 'silent':
-        if report_type == 'browser':
-            print(json.dumps({'type': data_type, 'data': data}))
-            sys.stdout.flush()
-        elif data_type != 'data':
-            print(data)
+    def report(self, data_type, data):
+        # This functionality --- as opposed to just printing the output --- is needed to pass data on to the node app
+        # Messages are just printed in the terminal window, whereas data is passed on to the node app
+        if self.report_type != 'silent':
+            if self.report_type == 'browser':
+                print(json.dumps({'type': data_type, 'data': data}))
+                sys.stdout.flush()
+            elif data_type != 'data':
+                print(data)
+
+def fileSuffix(report_type):
+    # If this is a test run, save data to "data_temp.csv".
+    # Otherwise, see how many data files are in directory, and increment to get new ID
+    if report_type == 'test':
+        return("_temp")
+    else:
+        max_id = 0
+        for file in os.listdir("../data/"):
+            files = re.search('data([0-9]+).csv', file)
+            if files:
+                file_id = int(files.group(1))
+                if file_id > max_id:
+                    max_id = file_id
+        return(max_id + 1)
 
 if __name__ == "__main__":
     try:
         report_type = sys.argv[1]
     except:
-        report_type = 'terminal'
-    report(report_type, 'message', 'reporting style: '+report_type)
+        report_type = 'test'
     if report_type == "browser":
-        runsim(SimParams, report_type)
+        simulation = Simulation(GlobalParams, {}, report_type)
+        simulation.run()
     else:
-        #runsim(SimParams, report_type)
-        data = []
-        R = 2000
-        #beta_max = 10
+        if report_type == 'test':
+            print("Test run...")
+
+        R = 20
+        file_id = fileSuffix(report_type)
+        data_file = "../data/data{}.csv".format(file_id)
+
         for sim in range(R):
             print(sim)
-            social_threshold = np.random.randint(1,11,1)[0]/10
-            tolerance = np.random.choice([0,0.05,0.1])
-            noise = np.random.choice([2, 5])
-            # alpha = np.random.randint(1,beta_max,1)[0]
-            # beta = beta_max - alpha
-            SimParams.social_threshold = social_threshold
-            SimParams.tolerance = tolerance
-            SimParams.noise = noise
-            # SimParams.alpha = alpha
-            # SimParams.beta = alpha
-            sim_data = runsim(SimParams, report_type, True)
 
-            # Store sim parameters
-            sim_data['sim'] = sim
-            sim_data['social_threshold'] = social_threshold
-            sim_data['tolerance'] = tolerance
-            sim_data['noise'] = noise
-            data.append(sim_data)
-        data = pd.concat(data)
-        data.to_csv("../data/data4.csv")
-
-
-
-# print("Python: script done...")
-# print(json.dumps({"message": "Python: script done..."}))
+            run_parameters = {
+                'social_threshold': np.random.choice([0.2, 0.3, 0.4]),
+                'tolerance': np.random.choice([0,0.05,0.1,0.15])
+            }
+            simulation = Simulation(GlobalParams, run_parameters, report_type)
+            simulation.run()
+            run_data = simulation.getData()
+            run_data.to_csv(data_file, mode="a", header=sim==0, index=False)
