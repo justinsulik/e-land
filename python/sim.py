@@ -31,9 +31,8 @@ class GlobalParams():
     agent_number = 40
     velocity = 0.4
 
-    alpha = 1
-    beta = 1
-    social_threshold = 1
+    social_threshold = {'alpha': 1, 'beta': 1}
+    social_type = 'homogeneous'
     tolerance = 0
     resilience = 1
 
@@ -80,7 +79,14 @@ class Simulation():
         data_out = pd.DataFrame.from_dict(self.data, orient="index")
         data_out['sim'] = sim
         for param_name in self.changed:
-            data_out[param_name] = getattr(self.params, param_name)
+            param_value = getattr(self.params, param_name)
+            try:
+                #If the param is an object, save each as a column
+               for key in param_value:
+                   data_out["{}_{}".format(param_name,key)] = param_value[key]
+            except:
+                #Save the value as a column
+                data_out[param_name] = param_value
         return(data_out)
 
     def report(self, data_type, data):
@@ -124,16 +130,23 @@ if __name__ == "__main__":
         R = 2000
         file_id = fileSuffix(report_type)
         data_file = "../data/data{}.csv".format(file_id)
+        param_file = "../data/param{}.json".format(file_id)
         print(data_file)
         for sim in tqdm(range(R)):
-            #print(sim)
-
+            #Distribution help: https://www.essycode.com/distribution-viewer/
+            # int() is needed because json can't handle np datatypes
+            max_beta = 6
+            alpha = int(np.random.choice(range(1,max_beta)))
+            beta = max_beta-alpha
             run_parameters = {
-                'social_threshold': np.random.choice([0.8, 0.9, 1]),
-                'noise': np.random.choice([2, 5]),
-                'resilience': np.random.choice([0.8, 0.9, 1])
+                'social_threshold': np.random.choice([{'alpha': alpha, 'beta': beta}]),
+                'social_type': np.random.choice(['homogeneous', 'heterogeneous']),
+                'noise': int(np.random.choice([2, 4, 6])),
             }
             simulation = Simulation(GlobalParams, run_parameters, report_type)
             simulation.run()
             run_data = simulation.getData(sim)
             run_data.to_csv(data_file, mode="a", header=sim==0, index=False)
+
+            with open(param_file, "w") as file_out:
+                json.dump(run_parameters, file_out, indent=4)

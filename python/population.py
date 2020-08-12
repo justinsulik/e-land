@@ -14,18 +14,19 @@ key_dict = {'id': 0,
     'previous_y_patch': 9,
     'previous_height': 10,
     'social_threshold': 11,
-    'status': 12}
-
+    'status': 12,
+    'tolerance': 13,
+    'resilience': 14}
 
 class Population():
 
-    def __init__(self, landscape, Sim):
+    def __init__(self, landscape, params):
         """
         Required params: landscape, agent_number, social_threshold, beta, desert, velocity
         """
         self.landscape = landscape
-        self.agent_number = Sim.agent_number
-        self.base_velocity = Sim.velocity
+        self.agent_number = params.agent_number
+        self.base_velocity = params.velocity
         self.agents = np.zeros((self.agent_number),dtype=[('id', 'i4'),
                                                   ('x','f4'),('y','f4'), #position on continuum
                                                   ('x_patch','i4'),('y_patch','i4'), #position on grid
@@ -36,20 +37,27 @@ class Population():
                                                   ('previous_height','f4'),
                                                   ('social_threshold','f4'),
                                                   ('status', 'i4'),
-                                                  ('tolerance', 'i4')])
+                                                  ('tolerance', 'i4'),
+                                                  ('resilience', 'f4')])
 
         # INITIALIZE AGENTS
         # assign index id
         self.agents['id'] = range(self.agent_number)
-        # set heading to random; velocity to sim;
+        # set heading to random; velocity to simulation param;
         self.agents['heading'] = np.random.uniform(0,2*np.pi,self.agent_number)
-        self.agents['velocity'] = Sim.velocity
+        self.agents['velocity'] = params.velocity
         # have not visited any previous patch, so previous_height also 0
         self.agents['previous_height'] = 0
-        # set social_threshold according to beta distribution (1,1 = uniform)
-        #self.agents['social_threshold'] = np.random.beta(Sim.alpha, Sim.beta, size=self.agent_number)
-        self.agents['social_threshold'] = Sim.social_threshold
-        self.agents['tolerance'] = Sim.tolerance
+        # Set social_threshold. If population is homogenous, everyone gets same value
+        # Else, draw randomly from beta distribution
+        # beta distribution (a,b) has mean = a/(a+b), hence this is the value for homogenous populations
+        if params.social_type == 'homogeneous':
+            self.agents['social_threshold'] = params.social_threshold['alpha']/(params.social_threshold['alpha']+params.social_threshold['beta'])
+        elif params.social_type == 'heterogeneous':
+            self.agents['social_threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'],self.agent_number)
+
+        self.agents['tolerance'] = params.tolerance
+        self.agents['resilience'] = params.resilience
         # set type to explore
         self.agents['status'] = 0
         self.mooreChoices = {x:0 for x in range(8)}
@@ -60,7 +68,7 @@ class Population():
             while not low:
                 x = np.random.uniform(0,self.landscape.x_size)
                 y = np.random.uniform(0,self.landscape.y_size)
-                if self.landscape.getSig(int(x),int(y)) < Sim.desert:
+                if self.landscape.getSig(int(x),int(y)) < params.desert:
                     agent['x'] = x
                     agent['y'] = y
                     agent['x_patch'] = int(x)
@@ -157,6 +165,9 @@ class Population():
             intolerable_decrease = self.goneTooFarDown(i)
             agent = self.agents[i]
             if intolerable_decrease:
+                # Lower the agent's resilience
+                if agent['social_threshold'] > 0.01:
+                    agent['social_threshold'] = round(agent['social_threshold'] * agent['resilience'], 3)
                 # Find out out much agent could learn
                 inclines = self.checkSocialLearning(i)
                 maxIncline = np.nanmax(inclines) #max social incline
