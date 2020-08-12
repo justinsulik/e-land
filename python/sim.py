@@ -2,6 +2,7 @@ import sys, os, re
 from landscape import Landscape
 from population import Population
 from plot import plot3d
+from tqdm import tqdm
 import json, pandas as pd, numpy as np
 
 class GlobalParams():
@@ -9,7 +10,7 @@ class GlobalParams():
     General parameters for the run of simulations
     """
     map_size = 50
-    timesteps = 10
+    timesteps = 500
 
     # EPISTEMIC PARAMETERS
     desert = 10 #below which value is a patch considered desert (used for initial placement)
@@ -34,6 +35,7 @@ class GlobalParams():
     beta = 1
     social_threshold = 1
     tolerance = 0
+    resilience = 1
 
 class Simulation():
     """
@@ -73,9 +75,10 @@ class Simulation():
         if self.report_type != 'browser':
             self.data[timestep] = step_data
 
-    def getData(self):
+    def getData(self, sim):
         # Include whatever variables have changed in this specific run in the run's data
         data_out = pd.DataFrame.from_dict(self.data, orient="index")
+        data_out['sim'] = sim
         for param_name in self.changed:
             data_out[param_name] = getattr(self.params, param_name)
         return(data_out)
@@ -105,11 +108,12 @@ def fileSuffix(report_type):
                     max_id = file_id
         return(max_id + 1)
 
+
 if __name__ == "__main__":
     try:
         report_type = sys.argv[1]
     except:
-        report_type = 'test'
+        report_type = 'silent'
     if report_type == "browser":
         simulation = Simulation(GlobalParams, {}, report_type)
         simulation.run()
@@ -117,18 +121,19 @@ if __name__ == "__main__":
         if report_type == 'test':
             print("Test run...")
 
-        R = 20
+        R = 2000
         file_id = fileSuffix(report_type)
         data_file = "../data/data{}.csv".format(file_id)
-
-        for sim in range(R):
-            print(sim)
+        print(data_file)
+        for sim in tqdm(range(R)):
+            #print(sim)
 
             run_parameters = {
-                'social_threshold': np.random.choice([0.2, 0.3, 0.4]),
-                'tolerance': np.random.choice([0,0.05,0.1,0.15])
+                'social_threshold': np.random.choice([0.8, 0.9, 1]),
+                'noise': np.random.choice([2, 5]),
+                'resilience': np.random.choice([0.8, 0.9, 1])
             }
             simulation = Simulation(GlobalParams, run_parameters, report_type)
             simulation.run()
-            run_data = simulation.getData()
+            run_data = simulation.getData(sim)
             run_data.to_csv(data_file, mode="a", header=sim==0, index=False)
