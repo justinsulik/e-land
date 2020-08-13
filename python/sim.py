@@ -10,7 +10,7 @@ class GlobalParams():
     General parameters for the run of simulations
     """
     map_size = 50
-    timesteps = 1
+    timesteps = 500
 
     # EPISTEMIC PARAMETERS
     desert = 10 #below which value is a patch considered desert (used for initial placement)
@@ -29,9 +29,9 @@ class GlobalParams():
 
     # AGENTS
     agent_number = 40
-    velocity = 0.4
+    velocity = 0.3
 
-    social_threshold = {'alpha': 1, 'beta': 1}
+    social_threshold = {'alpha': 1, 'beta': 1000}
     social_type = 'homogeneous'
     tolerance = 0
     resilience = 1
@@ -61,6 +61,7 @@ class Simulation():
             self.updateData(timestep)
             self.population.explore()
             self.population.move()
+            self.population.findPatches()
             self.population.consume(self.params.depletion)
             self.population.updateHeight()
 

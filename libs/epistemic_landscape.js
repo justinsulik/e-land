@@ -147,5 +147,5 @@ function change(data){
       if(iteration<data.length-1){
         iteration += 1;
       }
-    }, 100);
+    }, 50);
 }

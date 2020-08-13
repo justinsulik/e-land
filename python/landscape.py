@@ -53,6 +53,8 @@ class Landscape():
         self.total_epistemic_mass = self.epistemicMass()
         # max height: value of tallest peak
         self.max_height = np.max([self.getSig(x, y) for x in range(self.x_size) for y in range(self.y_size)])
+        # for i in range(11):
+        #     print(np.percentile([self.getSig(x, y) for x in range(self.x_size) for y in range(self.y_size)], i*10))
 
     def reportGrid(self):
         """
@@ -94,7 +96,6 @@ class Landscape():
         INPUT: coordinate
         OUTPUT: Moore neigborhood for that patch
         """
-        # coord = self.intI(x,y)
         for ind in range(8):
             x_wrap = (x + self.mooreIndList[ind][0]) % self.x_size
             y_wrap = (y + self.mooreIndList[ind][1]) % self.y_size
@@ -108,7 +109,8 @@ class Landscape():
         """
         pnf = PerlinNoiseFactory(2, octaves=octaves, tile=(self.x_size, self.y_size))
         for x, y in [[x,y] for x in range(self.x_size) for y in range(self.x_size)]:
-            self.incrementHeight(x,y, round(noise*pnf(x/smoothing, y/smoothing), 4))
+            # adding noise/x at the end because otherwise 50% of landscape is below 0
+            self.incrementHeight(x, y, round(noise*pnf(x/smoothing, y/smoothing), 4))
 
     def addGaussian(self,x_center,y_center,amplitude,sd):
         """
