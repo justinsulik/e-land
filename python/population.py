@@ -68,7 +68,7 @@ class Population():
             while not low:
                 x = np.random.uniform(0,self.landscape.x_size)
                 y = np.random.uniform(0,self.landscape.y_size)
-                if self.landscape.getSig(int(x),int(y)) < params.desert:
+                if 0 <= self.landscape.getSig(int(x),int(y)) < params.desert:
                     agent['x'] = x
                     agent['y'] = y
                     agent['x_patch'] = int(x)

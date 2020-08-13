@@ -16,7 +16,6 @@ class Landscape():
         self.x_size = params.map_size
         self.y_size = params.map_size
         self.depletion = params.depletion
-        self.res = 10
 
         # GRID
         # Each patch in grid is defined by:
@@ -49,9 +48,11 @@ class Landscape():
         # NOISE
         self.addPerlin(params.noise, params.smoothing, params.octaves)
 
-        # EPISTEMIC MASS
-        # total amount of epistemic value at start of simulation
+        # LANDSCAPE GLOBAL PROPERTIES
+        # epistemic mass: total amount of epistemic value at start of simulation
         self.total_epistemic_mass = self.epistemicMass()
+        # max height: value of tallest peak
+        self.max_height = np.max([self.getSig(x, y) for x in range(self.x_size) for y in range(self.y_size)])
 
     def reportGrid(self):
         """

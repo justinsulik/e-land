@@ -10,7 +10,7 @@ class GlobalParams():
     General parameters for the run of simulations
     """
     map_size = 50
-    timesteps = 500
+    timesteps = 1
 
     # EPISTEMIC PARAMETERS
     desert = 10 #below which value is a patch considered desert (used for initial placement)
@@ -127,7 +127,7 @@ if __name__ == "__main__":
         if report_type == 'test':
             print("Test run...")
 
-        R = 2000
+        R = 1
         file_id = fileSuffix(report_type)
         data_file = "../data/data{}.csv".format(file_id)
         param_file = "../data/param{}.json".format(file_id)
@@ -135,18 +135,19 @@ if __name__ == "__main__":
         for sim in tqdm(range(R)):
             #Distribution help: https://www.essycode.com/distribution-viewer/
             # int() is needed because json can't handle np datatypes
-            max_beta = 6
-            alpha = int(np.random.choice(range(1,max_beta)))
-            beta = max_beta-alpha
-            run_parameters = {
-                'social_threshold': np.random.choice([{'alpha': alpha, 'beta': beta}]),
-                'social_type': np.random.choice(['homogeneous', 'heterogeneous']),
-                'noise': int(np.random.choice([2, 4, 6])),
-            }
+            # max_beta = 6
+            # alpha = int(np.random.choice(range(1,max_beta)))
+            # beta = max_beta-alpha
+            # run_parameters = {
+            #     'social_threshold': np.random.choice([{'alpha': alpha, 'beta': beta}]),
+            #     'social_type': np.random.choice(['homogeneous', 'heterogeneous']),
+            #     'noise': int(np.random.choice([2, 4, 6])),
+            # }
+            run_parameters = {}
             simulation = Simulation(GlobalParams, run_parameters, report_type)
             simulation.run()
-            run_data = simulation.getData(sim)
-            run_data.to_csv(data_file, mode="a", header=sim==0, index=False)
+            # run_data = simulation.getData(sim)
+            # run_data.to_csv(data_file, mode="a", header=sim==0, index=False)
 
-            with open(param_file, "w") as file_out:
-                json.dump(run_parameters, file_out, indent=4)
+            # with open(param_file, "w") as file_out:
+            #     json.dump(run_parameters, file_out, indent=4)
