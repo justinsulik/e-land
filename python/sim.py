@@ -1,4 +1,4 @@
-import sys, os, re
+import sys, os, re, itertools
 from landscape import Landscape
 from population import Population
 from plot import plot3d
@@ -10,7 +10,7 @@ class GlobalParams():
     General parameters for the run of simulations
     """
     map_size = 50
-    timesteps = 500
+    timesteps = 400
 
     # EPISTEMIC PARAMETERS
     desert = 10 #below which value is a patch considered desert (used for initial placement)
@@ -24,14 +24,14 @@ class GlobalParams():
 
     # NOISE PARAMETERS
     noise = 6
-    smoothing = 4
+    smoothing = 2
     octaves = 3
 
     # AGENTS
     agent_number = 40
-    velocity = 0.3
+    velocity = 0.4
 
-    social_threshold = {'alpha': 1, 'beta': 1000}
+    social_threshold = {'alpha': 1, 'beta': 1}
     social_type = 'homogeneous'
     tolerance = 0
     resilience = 1
@@ -115,7 +115,6 @@ def fileSuffix(report_type):
                     max_id = file_id
         return(max_id + 1)
 
-
 if __name__ == "__main__":
     try:
         report_type = sys.argv[1]
@@ -128,27 +127,33 @@ if __name__ == "__main__":
         if report_type == 'test':
             print("Test run...")
 
-        R = 1
         file_id = fileSuffix(report_type)
         data_file = "../data/data{}.csv".format(file_id)
         param_file = "../data/param{}.json".format(file_id)
-        print(data_file)
+
+        #Distribution help: https://www.essycode.com/distribution-viewer/
+        ## int() is needed because json can't handle np datatypes
+        #max_beta = 10
+        #alpha = int(np.random.choice([1, 3, 5, 7, 9]))
+        #beta = max_beta-alpha
+        sim_parameters = {
+         'social_threshold': [{'alpha': 2, 'beta': 3}, {'alpha': 20, 'beta': 30}],
+         'noise': [2, 6],
+         'social_type': ['heterogeneous']
+        }
+        with open(param_file, "w") as file_out:
+            json.dump(sim_parameters, file_out, indent=4)
+
+        keys = sim_parameters.keys()
+        values = (sim_parameters[key] for key in keys)
+        run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
+
+        R = 100*len(run_list) # get 100 runs per cell
+
         for sim in tqdm(range(R)):
-            #Distribution help: https://www.essycode.com/distribution-viewer/
-            # int() is needed because json can't handle np datatypes
-            # max_beta = 6
-            # alpha = int(np.random.choice(range(1,max_beta)))
-            # beta = max_beta-alpha
-            # run_parameters = {
-            #     'social_threshold': np.random.choice([{'alpha': alpha, 'beta': beta}]),
-            #     'social_type': np.random.choice(['homogeneous', 'heterogeneous']),
-            #     'noise': int(np.random.choice([2, 4, 6])),
-            # }
-            run_parameters = {}
+            run_parameters = np.random.choice(run_list)
+            # run_parameters = {}
             simulation = Simulation(GlobalParams, run_parameters, report_type)
             simulation.run()
-            # run_data = simulation.getData(sim)
-            # run_data.to_csv(data_file, mode="a", header=sim==0, index=False)
-
-            # with open(param_file, "w") as file_out:
-            #     json.dump(run_parameters, file_out, indent=4)
+            run_data = simulation.getData(sim)
+            run_data.to_csv(data_file, mode="a", header=sim==0, index=False)
