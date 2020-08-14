@@ -33,6 +33,7 @@ class GlobalParams():
 
     social_threshold = {'alpha': 1, 'beta': 1}
     social_type = 'homogeneous'
+    mavericks = 0.1
     tolerance = 0
     resilience = 1
 
@@ -128,6 +129,7 @@ if __name__ == "__main__":
             print("Test run...")
 
         file_id = fileSuffix(report_type)
+        print(file_id)
         data_file = "../data/data{}.csv".format(file_id)
         param_file = "../data/param{}.json".format(file_id)
 
@@ -137,9 +139,10 @@ if __name__ == "__main__":
         #alpha = int(np.random.choice([1, 3, 5, 7, 9]))
         #beta = max_beta-alpha
         sim_parameters = {
-         'social_threshold': [{'alpha': 2, 'beta': 3}, {'alpha': 20, 'beta': 30}],
+         # 'social_threshold': [{'alpha': 2, 'beta': 3}, {'alpha': 20, 'beta': 30}],
+         'mavericks': [x/10 for x in range(11)],
          'noise': [2, 6],
-         'social_type': ['heterogeneous']
+         'social_type': ['proportional']
         }
         with open(param_file, "w") as file_out:
             json.dump(sim_parameters, file_out, indent=4)
@@ -149,6 +152,7 @@ if __name__ == "__main__":
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
 
         R = 100*len(run_list) # get 100 runs per cell
+        # R = 1
 
         for sim in tqdm(range(R)):
             run_parameters = np.random.choice(run_list)
@@ -156,4 +160,5 @@ if __name__ == "__main__":
             simulation = Simulation(GlobalParams, run_parameters, report_type)
             simulation.run()
             run_data = simulation.getData(sim)
-            run_data.to_csv(data_file, mode="a", header=sim==0, index=False)
+            print_header = sim==0
+            run_data.to_csv(data_file, mode="a", header=print_header, index=False)

@@ -66,6 +66,17 @@ class Population():
         ## Adjust values according to map size and height, such that base value 1 -- generated above --- maps to max(height)/max(distance)
         #normalisation_factor = self.landscape.max_height/max(self.landscape.x_size/2, self.landscape.y_size/2)
         #self.agents['social_threshold'] *= normalisation_factor
+        elif params.social_type == 'proportional':
+            # If proportional, set a certain proportion of the population to be true mavericks and the rest conformists
+            mavericks_number = int(round(params.mavericks*self.agent_number, 0))
+            conformists_number = self.agent_number - mavericks_number
+            categorical_thresholds = mavericks_number*[10] + conformists_number*[0]
+            #print(mavericks_number, conformists_number, categorical_thresholds)
+            self.agents['social_threshold'] = categorical_thresholds
+        else:
+            raise Exception("social_type must be one of: homogeneous, heterogeneous, proportional")
+
+
 
 
 
