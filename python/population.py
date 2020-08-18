@@ -71,7 +71,6 @@ class Population():
             mavericks_number = int(round(params.mavericks*self.agent_number, 0))
             conformists_number = self.agent_number - mavericks_number
             categorical_thresholds = mavericks_number*[10] + conformists_number*[0]
-            #print(mavericks_number, conformists_number, categorical_thresholds)
             self.agents['social_threshold'] = categorical_thresholds
         else:
             raise Exception("social_type must be one of: homogeneous, heterogeneous, proportional")
