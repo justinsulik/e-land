@@ -33,10 +33,10 @@ class GlobalParams():
     velocity = 0.4
 
     social_threshold = {'alpha': 1, 'beta': 1}
-    social_type = 'homogeneous' #values: homogeneous, heterogeneous, proportional
-    mavericks = 0.1 # what proportion to make complete mavericks. Only has effect of social_type = proportional
-    tolerance = 0 # how much decrease in value they can handle before doing social learning
-    resilience = 1 # rate at which their social threshold decreases if they aren't climbing
+    social_type = 'homogeneous' #values: homogeneous, heterogeneous, proportional - see population.py for description
+    mavericks = 0.1 # what proportion to make complete mavericks. Only has an effect for social_type = proportional
+    tolerance = 0 # how much decrease in value they can handle before doing social learning. 0 = looks at social info anytime goes downhill
+    resilience = 1 # rate at which their social threshold decreases if they aren't climbing. 1 = stays constant (the effect is multiplicative)
 
 class Simulation():
     """
@@ -120,9 +120,10 @@ def fileSuffix(report_type):
 
 if __name__ == "__main__":
     try:
+        # when called from the node app, the first arg is 'browser'
         report_type = sys.argv[1]
     except:
-        report_type = 'silent'
+        report_type = 'test'
     if report_type == "browser":
         simulation = Simulation(GlobalParams, {}, report_type)
         simulation.run()
@@ -130,12 +131,13 @@ if __name__ == "__main__":
         if report_type == 'test':
             print("Test run...")
 
+        # Set up filenames for storing data and sim parameters
         file_id = fileSuffix(report_type)
         data_file = "../data/data{}.csv".format(file_id)
         param_file = "../data/param{}.json".format(file_id)
 
         sim_parameters = {
-         # 'social_threshold': [{'alpha': 2, 'beta': 3}, {'alpha': 20, 'beta': 30}],
+         #'social_threshold': [{'alpha': 2, 'beta': 3}, {'alpha': 20, 'beta': 30}],
          'mavericks': [x/10 for x in range(11)],
          'noise': [2, 6],
          'social_type': ['proportional']
@@ -147,7 +149,7 @@ if __name__ == "__main__":
         values = (sim_parameters[key] for key in keys)
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
 
-        R = 100*len(run_list) # get 100 runs per cell
+        R = 100*len(run_list) # get roughly 100 runs per cell
         # R = 1
 
         for sim in tqdm(range(R)):
