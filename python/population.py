@@ -1,6 +1,6 @@
 import numpy as np
 
-# Since the agent info is passed to the js script as a dict rather than a tuple,
+# Since the agent info is passed to the js script as a dict, but is handled here as a tuple,
 # this dict maps between the agent info keys and tuple indices
 key_dict = {'id': 0,
     'x': 1,
@@ -22,7 +22,7 @@ class Population():
 
     def __init__(self, landscape, params):
         """
-        Required params: landscape, agent_number, social_threshold, beta, desert, velocity
+        Generate a population of agents and drop them in the desert
         """
         self.landscape = landscape
         self.agent_number = params.agent_number
@@ -75,11 +75,6 @@ class Population():
         else:
             raise Exception("social_type must be one of: homogeneous, heterogeneous, proportional")
 
-
-
-
-
-
         #PLACE ALL AGENTS IN THE DESERT
         for agent in self.agents:
             low = False
@@ -98,7 +93,7 @@ class Population():
         Generate list of agents with x, y, height vals
         """
         # Needed for the node app visualization
-        # 3d-d3 uses y as height, hence switching z and y
+        # the javascript library "3d-d3" uses y as height, hence switching z and y
         # Offset by half mapsize
         agents = [{'x': agent[key_dict['x']]-self.landscape.x_size/2,
             'z': agent[key_dict['y']]-self.landscape.y_size/2,
@@ -107,8 +102,8 @@ class Population():
         return(agents)
 
     def findPatches(self):
-        #end of each round, calculate patches for all agents, reduces unnecessary np.round()
-        #update height while at it
+        # At the end of each round, calculate patches for all agents, reduces unnecessary np.round()
+        # Update height while at it
         self.agents['x_patch'] = np.floor(self.agents['x'])
         self.agents['y_patch'] = np.floor(self.agents['y'])
 
