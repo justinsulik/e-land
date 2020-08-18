@@ -66,17 +66,6 @@ class Population():
         ## Adjust values according to map size and height, such that base value 1 -- generated above --- maps to max(height)/max(distance)
         #normalisation_factor = self.landscape.max_height/max(self.landscape.x_size/2, self.landscape.y_size/2)
         #self.agents['social_threshold'] *= normalisation_factor
-        elif params.social_type == 'proportional':
-            # If proportional, set a certain proportion of the population to be true mavericks and the rest conformists
-            mavericks_number = int(round(params.mavericks*self.agent_number, 0))
-            conformists_number = self.agent_number - mavericks_number
-            categorical_thresholds = mavericks_number*[10] + conformists_number*[0]
-            #print(mavericks_number, conformists_number, categorical_thresholds)
-            self.agents['social_threshold'] = categorical_thresholds
-        else:
-            raise Exception("social_type must be one of: homogeneous, heterogeneous, proportional")
-
-
 
 
 
@@ -192,7 +181,7 @@ class Population():
                     # If yes, identify best candidate to follow
                     # (choose randomly if tie)
                     maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
-                    self.setHeadingToPatch(i, maxAgent['x'],maxAgent['y'])
+                    self.setHeadingToPatch(i, maxAgent['x_patch'],maxAgent['y_patch'])
                     agent['status'] = 1 # social learning
                 else:
                     self.exploreLocalArea(i)

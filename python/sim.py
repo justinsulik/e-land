@@ -5,6 +5,7 @@ from plot import plot3d
 from tqdm import tqdm
 import json, pandas as pd, numpy as np
 
+# Classes for running a simulation with some default global params, and some run-specific or variable params
 class GlobalParams():
     """
     General parameters for the run of simulations
@@ -14,7 +15,7 @@ class GlobalParams():
 
     # EPISTEMIC PARAMETERS
     desert = 10 #below which value is a patch considered desert (used for initial placement)
-    #sigThreshold = 0.8 #used for epistemic_progress -- as quantile of mass
+    #sigThreshold = 10
     depletion = 0.5
 
     # HILLS
@@ -23,7 +24,7 @@ class GlobalParams():
     #hill_distance = 1 #1 = max poss equal spacing in landscape size
 
     # NOISE PARAMETERS
-    noise = 6
+    noise = 5
     smoothing = 2
     octaves = 3
 
@@ -32,16 +33,15 @@ class GlobalParams():
     velocity = 0.4
 
     social_threshold = {'alpha': 1, 'beta': 1}
-    social_type = 'homogeneous'
-    mavericks = 0.1
-    tolerance = 0
-    resilience = 1
+    social_type = 'homogeneous' #values: homogeneous, heterogeneous, proportional
+    mavericks = 0.1 # what proportion to make complete mavericks. Only has effect of social_type = proportional
+    tolerance = 0 # how much decrease in value they can handle before doing social learning
+    resilience = 1 # rate at which their social threshold decreases if they aren't climbing
 
 class Simulation():
     """
     Class for an individual simulation run, combining global parameters with run-specific parameters
     """
-
     def __init__(self,global_params,run_params,report_type):
         self.params = global_params
         self.report_type = report_type
@@ -53,6 +53,7 @@ class Simulation():
             setattr(self.params, param_name, run_params[param_name])
 
     def run(self):
+        # One run of the simulation, consisting of multiple timesteps during which agents do stuff
         self.report('message', "Python: sim starting...")
         self.data = {}
         self.landscape = Landscape(self.params)
@@ -108,12 +109,13 @@ def fileSuffix(report_type):
         return("_temp")
     else:
         max_id = 0
-        for file in os.listdir("../data/"):
-            files = re.search('data([0-9]+).csv', file)
-            if files:
-                file_id = int(files.group(1))
-                if file_id > max_id:
-                    max_id = file_id
+        if os.path.exists("../data/"):
+            for file in os.listdir("../data/"):
+                files = re.search('data([0-9]+).csv', file)
+                if files:
+                    file_id = int(files.group(1))
+                    if file_id > max_id:
+                        max_id = file_id
         return(max_id + 1)
 
 if __name__ == "__main__":
@@ -129,15 +131,9 @@ if __name__ == "__main__":
             print("Test run...")
 
         file_id = fileSuffix(report_type)
-        print(file_id)
         data_file = "../data/data{}.csv".format(file_id)
         param_file = "../data/param{}.json".format(file_id)
 
-        #Distribution help: https://www.essycode.com/distribution-viewer/
-        ## int() is needed because json can't handle np datatypes
-        #max_beta = 10
-        #alpha = int(np.random.choice([1, 3, 5, 7, 9]))
-        #beta = max_beta-alpha
         sim_parameters = {
          # 'social_threshold': [{'alpha': 2, 'beta': 3}, {'alpha': 20, 'beta': 30}],
          'mavericks': [x/10 for x in range(11)],

@@ -9,22 +9,24 @@ app.use('/libs', express.static(__dirname + "/libs"));
 app.engine('html', require('ejs').renderFile);
 
 app.get('/', (req, res, next) => {
-
+    // Call a child process to run the python script
     let runPy = new Promise(function(resolve, reject) {
         console.log("Node: python starting...");
         const { spawn } = require('child_process');
         const pyprog = spawn('python3', ['python/sim.py', 'browser']);
         let python_out = '';
-
+        // add data to string for eventual passing to the front end
         pyprog.stdout.on('data', function(data) {
             python_out += data.toString();
         });
 
+        // handle errors
         pyprog.stderr.on('data', (data) => {
             console.log("Python error!", data.toString())
             reject(data.toString());
         });
 
+        // at the end of the data stream, split the data into messages (--> console) and data (--> browser)
         pyprog.stdout.on('end', () => {
             console.log('Node: python end...');
             var data = [];
@@ -48,7 +50,6 @@ app.get('/', (req, res, next) => {
     runPy.then((data) => {
         console.log('Node: python script success!');
         res.render('index.html', {data: JSON.stringify(data)});
-        // res.end(fromRunpy.toString());
     })
     .catch((err)=>{
       res.end(err);

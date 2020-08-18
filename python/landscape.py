@@ -11,8 +11,6 @@ class Landscape():
         """
         Required params: x_size,y_size,depletion,hills,hill_width,noise,smoothing
         """
-        # x_size, y_size (int): size of grid FROM ORIGIN IN CENTER
-        # depletion (float in [0,1]): depletion rate
         self.x_size = params.map_size
         self.y_size = params.map_size
         self.depletion = params.depletion
@@ -21,7 +19,7 @@ class Landscape():
         # Each patch in grid is defined by:
         # x, y (int): coordinates
         # height (float): epistemic value of the patch
-        # visited (int): number of times visited
+        # visited (int): number of times visited - NOT IMPLEMENTED YET
         self.grid = np.zeros((self.x_size,self.y_size),dtype = [
             ('x', np.int8),
             ('y', np.int8),
@@ -53,15 +51,13 @@ class Landscape():
         self.total_epistemic_mass = self.epistemicMass()
         # max height: value of tallest peak
         self.max_height = np.max([self.getSig(x, y) for x in range(self.x_size) for y in range(self.y_size)])
-        # for i in range(11):
-        #     print(np.percentile([self.getSig(x, y) for x in range(self.x_size) for y in range(self.y_size)], i*10))
 
     def reportGrid(self):
         """
         Format grid data as {x,y,z} dictionary for plotting
         """
-        # Stupidly, 3d_d3 takes y to be height
-        # make center of grid (0,0) by offsetting half of map size
+        # Stupidly, the 3d_d3 library in the visualization script takes y to be height, so switch z and y
+        # Also, make center of grid (0,0) by offsetting half of map size
         return([{'x': point[0]-self.x_size/2, 'z': point[1]-self.y_size/2, 'y': point[2]} for point in self.grid.flatten().tolist()])
 
     def getSig(self,x,y):
@@ -72,6 +68,9 @@ class Landscape():
         return self.grid[x,y]['height']
 
     def setSig(self,x,y,newSig):
+        """
+        INPUT: coordinates, and new height/epistemic significance for those coordinates
+        """
         self.grid[x,y]['height'] = newSig
 
     def incrementHeight(self,x,y,amount):
@@ -82,6 +81,7 @@ class Landscape():
         INPUT: coordinate
         """
         self.grid[x,y]['visited'] = 1  #if value is 1, the patch has been visited
+        # Nothing calls this yet
 
     def getPatch(self,x,y):
         """
@@ -105,7 +105,7 @@ class Landscape():
     def addPerlin(self, noise, smoothing, octaves):
         """
         Add Perlin noise
-        INPUT: noise (int): amplitude of noise; smoothing (int): randomness of noise
+        INPUT: noise (int): amplitude of noise; smoothing (int): randomness of noise (int in 1:4)
         """
         pnf = PerlinNoiseFactory(2, octaves=octaves, tile=(self.x_size, self.y_size))
         for x, y in [[x,y] for x in range(self.x_size) for y in range(self.x_size)]:
@@ -127,4 +127,5 @@ class Landscape():
         return(np.sum(self.grid['height'][self.grid['height']>0]))
 
     def epistemicMassDiscovered(self):
+        # How much of the original epistemic mass has been discovered by agents so far
         return(round(1 - self.epistemicMass()/self.total_epistemic_mass, 4))
