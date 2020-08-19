@@ -165,7 +165,7 @@ class Population():
         agent = self.agents[i]
         current_height = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
         # Is the agent going downhill, more than what is within their tolerance?
-        if current_height < agent['previous_height'] + agent['tolerance']:
+        if current_height < agent['previous_height'] - agent['tolerance']:
             return True
         else:
             return False

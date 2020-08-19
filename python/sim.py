@@ -16,7 +16,7 @@ class GlobalParams():
     # EPISTEMIC PARAMETERS
     desert = 10 #below which value is a patch considered desert (used for initial placement)
     #sigThreshold = 10
-    depletion = 0.5
+    depletion = 0.4
 
     # HILLS
     hill_number = 2
@@ -24,17 +24,17 @@ class GlobalParams():
     #hill_distance = 1 #1 = max poss equal spacing in landscape size
 
     # NOISE PARAMETERS
-    noise = 5
-    smoothing = 2
-    octaves = 3
+    noise = 6
+    smoothing = 3
+    octaves = 4
 
     # AGENTS
     agent_number = 40
     velocity = 0.4
 
     social_threshold = {'alpha': 1, 'beta': 1}
-    social_type = 'homogeneous' #values: homogeneous, heterogeneous, proportional - see population.py for description
-    mavericks = 0.1 # what proportion to make complete mavericks. Only has an effect for social_type = proportional
+    social_type = 'proportional' #values: homogeneous, heterogeneous, proportional - see population.py for description
+    mavericks = 0 # what proportion to make complete mavericks. Only has an effect for social_type = proportional
     tolerance = 0 # how much decrease in value they can handle before doing social learning. 0 = looks at social info anytime goes downhill
     resilience = 1 # rate at which their social threshold decreases if they aren't climbing. 1 = stays constant (the effect is multiplicative)
 
@@ -138,8 +138,9 @@ if __name__ == "__main__":
 
         sim_parameters = {
          #'social_threshold': [{'alpha': 2, 'beta': 3}, {'alpha': 20, 'beta': 30}],
-         'mavericks': [x/10 for x in range(11)],
-         'noise': [2, 6],
+         'mavericks': [0, 0.1, 1],
+         'noise': [2, 6, 12],
+         'tolerance': [0, 0.1, 0.2, 0.4, 0.8, 1.6],
          'social_type': ['proportional']
         }
         with open(param_file, "w") as file_out:
