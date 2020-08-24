@@ -1,4 +1,4 @@
-import sys, os, re, itertools
+import sys, os, re, itertools, concurrent.futures
 from landscape import Landscape
 from population import Population
 from plot import plot3d
@@ -42,9 +42,9 @@ class Simulation():
     """
     Class for an individual simulation run, combining global parameters with run-specific parameters
     """
-    def __init__(self,global_params,run_params,report_type):
+    def __init__(self,global_params,run_params,sim_type):
         self.params = global_params
-        self.report_type = report_type
+        self.sim_type = sim_type
         self.changed = []
         for param_name in run_params:
             # Keep track of which parameters are specific to this run
@@ -74,7 +74,7 @@ class Simulation():
         self.report("data", json.dumps({'landscape': self.landscape.reportGrid(), 'population': self.population.reportAgents()}))
         step_data = {'timestep': timestep,
             'mass': self.landscape.epistemicMassDiscovered()}
-        if self.report_type != 'browser':
+        if self.sim_type != 'browser':
             self.data[timestep] = step_data
 
     def getData(self, sim):
@@ -95,17 +95,17 @@ class Simulation():
     def report(self, data_type, data):
         # This functionality --- as opposed to just printing the output --- is needed to pass data on to the node app
         # Messages are just printed in the terminal window, whereas data is passed on to the node app
-        if self.report_type != 'silent':
-            if self.report_type == 'browser':
+        if self.sim_type != 'silent':
+            if self.sim_type == 'browser':
                 print(json.dumps({'type': data_type, 'data': data}))
                 sys.stdout.flush()
             elif data_type != 'data':
                 print(data)
 
-def fileSuffix(report_type):
+def fileSuffix(sim_type):
     # If this is a test run, save data to "data_temp.csv".
     # Otherwise, see how many data files are in directory, and increment to get new ID
-    if report_type == 'test':
+    if sim_type == 'test':
         return("_temp")
     else:
         max_id = 0
@@ -118,30 +118,46 @@ def fileSuffix(report_type):
                         max_id = file_id
         return(max_id + 1)
 
+def singleRun(inputs):
+    glob, loc, i = inputs
+    simulation = Simulation(glob, loc, 'silent')
+    simulation.run()
+    run_data = simulation.getData(i)
+    run_data.to_csv(data_file, mode="a", header=False, index=False)
+    return("done")
+
 if __name__ == "__main__":
     try:
         # when called from the node app, the first arg is 'browser'
-        report_type = sys.argv[1]
+        sim_type = sys.argv[1]
     except:
-        report_type = 'test'
-    if report_type == "browser":
-        simulation = Simulation(GlobalParams, {}, report_type)
+        sim_type = 'silent'
+    if sim_type == "browser":
+        simulation = Simulation(GlobalParams, {}, sim_type)
         simulation.run()
     else:
-        if report_type == 'test':
+        if sim_type == 'test':
             print("Test run...")
 
         # Set up filenames for storing data and sim parameters
-        file_id = fileSuffix(report_type)
+        file_id = fileSuffix(sim_type)
         data_file = "../data/data{}.csv".format(file_id)
+        print('will save to {}'.format(data_file))
         param_file = "../data/param{}.json".format(file_id)
 
         sim_parameters = {
-         #'social_threshold': [{'alpha': 2, 'beta': 3}, {'alpha': 20, 'beta': 30}],
-         'mavericks': [0, 0.1, 1],
+         'social_threshold': [{'alpha': 1, 'beta': 19},
+         {'alpha': 3, 'beta': 17},
+         {'alpha': 6, 'beta': 14},
+         {'alpha': 9, 'beta': 11},
+         {'alpha': 12, 'beta': 8},
+         {'alpha': 15, 'beta': 5},
+         {'alpha': 18, 'beta': 2}],
          'noise': [2, 6, 12],
-         'tolerance': [0, 0.1, 0.2, 0.4, 0.8, 1.6],
-         'social_type': ['proportional']
+         'tolerance': [0, 1.0],
+         'resilience': [0.95, 0.995, 1.0],
+         'hill_width': [3, 10],
+         'social_type': ['heterogeneous', 'homogeneous']
         }
         with open(param_file, "w") as file_out:
             json.dump(sim_parameters, file_out, indent=4)
@@ -151,13 +167,30 @@ if __name__ == "__main__":
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
 
         R = 100*len(run_list) # get roughly 100 runs per cell
-        # R = 1
+        # R = 10
 
-        for sim in tqdm(range(R)):
-            run_parameters = np.random.choice(run_list)
-            # run_parameters = {}
-            simulation = Simulation(GlobalParams, run_parameters, report_type)
-            simulation.run()
-            run_data = simulation.getData(sim)
-            print_header = sim==0
-            run_data.to_csv(data_file, mode="a", header=print_header, index=False)
+        if sim_type == 'multi':
+            headers = 'timestep,mass,sim,'
+            for i, param in enumerate(sim_parameters):
+                if param == 'social_threshold':
+                    headers+= 'social_threshold_alpha,social_threshold_alpha,'
+                elif i<len(sim_parameters)-1:
+                    headers += param + ','
+                else:
+                    headers += param + '\n'
+            with open(data_file, "w") as f:
+                f.write(headers)
+            tasks = [(GlobalParams,np.random.choice(run_list), i) for i in range(R)]
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                results = list(tqdm(executor.map(singleRun, tasks), total=R)) # list() needed for tqdm to work for some reason
+
+                    # print('%d is prime: %s' % (number, prime))
+        else:
+            for sim in tqdm(range(R)):
+                run_parameters = np.random.choice(run_list)
+                # run_parameters = {}
+                simulation = Simulation(GlobalParams, run_parameters, sim_type)
+                simulation.run()
+                run_data = simulation.getData(sim)
+                print_header = sim==0
+                run_data.to_csv(data_file, mode="a", header=print_header, index=False)
