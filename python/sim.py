@@ -168,7 +168,7 @@ if __name__ == "__main__":
         values = (sim_parameters[key] for key in keys)
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
 
-        R = 1*len(run_list) # get roughly 100 runs per cell
+        R = 100*len(run_list) # get roughly 100 runs per cell
         # R = 10
 
         headers = 'timestep,mass,sim,'
