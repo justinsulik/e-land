@@ -42,10 +42,11 @@ class Simulation():
     """
     Class for an individual simulation run, combining global parameters with run-specific parameters
     """
-    def __init__(self,global_params,run_params,sim_type):
+    def __init__(self,global_params,run_params,sim_type,reportsteps):
         self.params = global_params
         self.sim_type = sim_type
         self.changed = []
+        self.reportsteps = reportsteps
         for param_name in run_params:
             # Keep track of which parameters are specific to this run
             self.changed.append(param_name)
@@ -70,12 +71,15 @@ class Simulation():
         self.report('message', "Python: sim done...")
 
     def updateData(self, timestep):
-        # Before each time step, store the current state of the simulation
-        self.report("data", json.dumps({'landscape': self.landscape.reportGrid(), 'population': self.population.reportAgents()}))
-        step_data = {'timestep': timestep,
-            'mass': self.landscape.epistemicMassDiscovered()}
-        if self.sim_type != 'browser':
-            self.data[timestep] = step_data
+        #either 'print' the data for the node app to see or store it for later saving
+        if self.sim_type == 'browser':
+            self.report("data", json.dumps({'landscape': self.landscape.reportGrid(), 'population': self.population.reportAgents()}))
+        else:
+            if self.reportsteps == 'all' or timestep==self.params.timesteps-1:
+                # Before each timesteo OR just final timestep, store the current state of the simulation
+                step_data = {'timestep': timestep,
+                    'mass': self.landscape.epistemicMassDiscovered()}
+                self.data[timestep] = step_data
 
     def getData(self, sim):
         # Include whatever variables have changed in this specific run in the run's data
@@ -120,7 +124,7 @@ def fileSuffix(sim_type):
 
 def singleRun(inputs):
     glob, loc, i = inputs
-    simulation = Simulation(glob, loc, 'silent')
+    simulation = Simulation(glob, loc, 'silent', 'final')
     simulation.run()
     run_data = simulation.getData(i)
     run_data.to_csv(data_file, mode="a", header=False, index=False)
@@ -146,19 +150,17 @@ if __name__ == "__main__":
         param_file = "../data/param{}.json".format(file_id)
 
         sim_parameters = {
-         'social_threshold': [{'alpha': 1, 'beta': 19},
-         {'alpha': 3, 'beta': 17},
-         {'alpha': 6, 'beta': 14},
-         {'alpha': 9, 'beta': 11},
-         {'alpha': 12, 'beta': 8},
-         {'alpha': 15, 'beta': 5},
-         {'alpha': 18, 'beta': 2}],
+         'social_threshold': [{'k': 1.1, 'theta': 0.05},
+         {'k': 1.1, 'theta': 0.2},
+         {'k': 1.1, 'theta': 0.35},
+         {'k': 1.1, 'theta': 0.5}],
          'noise': [2, 6, 12],
-         'tolerance': [0, 1.0],
+         'tolerance': [x/5 for x in range(3)],
          'resilience': [0.95, 0.995, 1.0],
-         'hill_width': [3, 10],
+         'hill_width': [3, 6],
          'social_type': ['heterogeneous', 'homogeneous']
         }
+
         with open(param_file, "w") as file_out:
             json.dump(sim_parameters, file_out, indent=4)
 
@@ -166,31 +168,30 @@ if __name__ == "__main__":
         values = (sim_parameters[key] for key in keys)
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
 
-        R = 100*len(run_list) # get roughly 100 runs per cell
+        R = 1*len(run_list) # get roughly 100 runs per cell
         # R = 10
 
-        if sim_type == 'multi':
-            headers = 'timestep,mass,sim,'
-            for i, param in enumerate(sim_parameters):
-                if param == 'social_threshold':
-                    headers+= 'social_threshold_alpha,social_threshold_alpha,'
-                elif i<len(sim_parameters)-1:
-                    headers += param + ','
-                else:
-                    headers += param + '\n'
-            with open(data_file, "w") as f:
-                f.write(headers)
-            tasks = [(GlobalParams,np.random.choice(run_list), i) for i in range(R)]
-            with concurrent.futures.ProcessPoolExecutor() as executor:
-                results = list(tqdm(executor.map(singleRun, tasks), total=R)) # list() needed for tqdm to work for some reason
+        headers = 'timestep,mass,sim,'
+        for i, param in enumerate(sim_parameters):
+            if param == 'social_threshold':
+                # headers+= 'social_threshold_alpha,social_threshold_beta,'
+                headers+= 'social_threshold_k,social_threshold_theta,'
+            elif i<len(sim_parameters)-1:
+                headers += param + ','
+            else:
+                headers += param + '\n'
+        with open(data_file, "w") as f:
+            f.write(headers)
+        tasks = [(GlobalParams,np.random.choice(run_list), i) for i in range(R)]
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            results_ = list(tqdm(executor.map(singleRun, tasks), total=R)) # list() needed for tqdm to work for some reason
 
-                    # print('%d is prime: %s' % (number, prime))
-        else:
-            for sim in tqdm(range(R)):
-                run_parameters = np.random.choice(run_list)
-                # run_parameters = {}
-                simulation = Simulation(GlobalParams, run_parameters, sim_type)
-                simulation.run()
-                run_data = simulation.getData(sim)
-                print_header = sim==0
-                run_data.to_csv(data_file, mode="a", header=print_header, index=False)
+        # else:
+        #     for sim in tqdm(range(R)):
+        #         run_parameters = np.random.choice(run_list)
+        #         # run_parameters = {}
+        #         simulation = Simulation(GlobalParams, run_parameters, sim_type)
+        #         simulation.run()
+        #         run_data = simulation.getData(sim)
+        #         print_header = sim==0
+        #         run_data.to_csv(data_file, mode="a", header=print_header, index=False)

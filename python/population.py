@@ -51,18 +51,31 @@ class Population():
         self.agents['status'] = 0
         # set other params to given vals
         self.agents['velocity'] = params.velocity
-        self.agents['tolerance'] = params.tolerance
         self.agents['resilience'] = params.resilience
 
         # SOCIAL LEARNING
         # Set values in range (0,1)
         if params.social_type == 'homogeneous':
-            # If population is homogenous, everyone gets same value: the mean of the beta distribution
-            # beta(a,b) has mean = a/(a+b)
-            self.agents['social_threshold'] = params.social_threshold['alpha']/(params.social_threshold['alpha']+params.social_threshold['beta'])
+            # If population is homogenous, everyone gets same values - the mean of the distribution
+            # mean of beta distribution (a,b) = a/(a+b)
+            # mean of gamma distribution (k, theta) = k*theta
+            # mean of binomial distribution (1, p) = p
+            if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
+                self.agents['social_threshold'] = params.social_threshold['alpha']/(params.social_threshold['alpha']+params.social_threshold['beta'])
+            elif 'k' in params.social_threshold and 'theta' in params.social_threshold:
+                self.agents['social_threshold'] = params.social_threshold['k']*params.social_threshold['theta']
+            else:
+                raise Exception("social_threshold must EITHER have alpha, beta values OR have k, theta values")
+            self.agents['tolerance'] = params.tolerance
         elif params.social_type == 'heterogeneous':
-            # If population is heterogeneous, draw randomly from beta distribution
-            self.agents['social_threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'],self.agent_number)
+            # If population is heterogeneous, draw randomly from beta/gamma/binomial distributions
+            if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
+                self.agents['social_threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], self.agent_number)
+            elif 'k' in params.social_threshold and 'theta' in params.social_threshold:
+                self.agents['social_threshold'] = np.random.gamma(params.social_threshold['k'], params.social_threshold['theta'], self.agent_number)
+            else:
+                raise Exception("social_threshold must EITHER have alpha, beta values OR have k, theta values")
+            self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
         ## Adjust values according to map size and height, such that base value 1 -- generated above --- maps to max(height)/max(distance)
         #normalisation_factor = self.landscape.max_height/max(self.landscape.x_size/2, self.landscape.y_size/2)
         #self.agents['social_threshold'] *= normalisation_factor
@@ -70,8 +83,10 @@ class Population():
             # If proportional, set a certain proportion of the population to be true mavericks and the rest conformists
             mavericks_number = int(round(params.mavericks*self.agent_number, 0))
             conformists_number = self.agent_number - mavericks_number
-            categorical_thresholds = mavericks_number*[10] + conformists_number*[0]
-            self.agents['social_threshold'] = categorical_thresholds
+            social_thresholds = mavericks_number*[10] + conformists_number*[0]
+            self.agents['social_threshold'] = social_thresholds
+            tolerance_thresholds = mavericks_number*[1] + conformists_number*[0]
+            self.agents['tolerance'] = tolerance_thresholds
         else:
             raise Exception("social_type must be one of: homogeneous, heterogeneous, proportional")
 
