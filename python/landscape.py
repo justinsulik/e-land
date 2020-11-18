@@ -20,13 +20,11 @@ class Landscape():
         # x, y (int): coordinates
         # height (float): epistemic value of the patch
         # visited (int): number of times visited - NOT IMPLEMENTED YET
-        self.grid = np.zeros((self.x_size,self.y_size),dtype = [
-            ('x', np.int8),
-            ('y', np.int8),
-            ('height', np.float64),
-            ('visited', np.int8)
-            ]
-        )
+        self.grid = np.zeros((self.x_size,self.y_size),
+            dtype = [('x', np.int8),
+                     ('y', np.int8),
+                     ('height', np.float64),
+                     ('visited', np.int8)])
 
         # COORDINATES
         self.grid['x'] = np.indices(self.grid.shape)[0]
@@ -39,8 +37,12 @@ class Landscape():
 
         # HILLS
         for i in range(params.hill_number):
-            hill_center_x = i*params.map_size/params.hill_number
-            hill_center_y = i*params.map_size/params.hill_number
+            if params.hill_number == 1:
+                hill_center_x = 0.5*params.map_size
+                hill_center_y = 0.5*params.map_size
+            else:
+                hill_center_x = i*params.map_size/params.hill_number
+                hill_center_y = i*params.map_size/params.hill_number
             self.addGaussian(hill_center_x,hill_center_y,params.hill_width/params.noise*1000,params.hill_width)
 
         # NOISE

@@ -10,16 +10,16 @@ class GlobalParams():
     """
     General parameters for the run of simulations
     """
-    map_size = 50
+    map_size = 40
     timesteps = 400
 
     # EPISTEMIC PARAMETERS
     desert = 10 #below which value is a patch considered desert (used for initial placement)
     #sigThreshold = 10
-    depletion = 0.4
+    depletion = 0.2
 
     # HILLS
-    hill_number = 2
+    hill_number = 1
     hill_width = 3
     #hill_distance = 1 #1 = max poss equal spacing in landscape size
 
@@ -29,11 +29,13 @@ class GlobalParams():
     octaves = 4
 
     # AGENTS
-    agent_number = 40
+    agent_number = 1
     velocity = 0.4
 
-    social_threshold = {'alpha': 1, 'beta': 1}
-    social_type = 'proportional' #values: homogeneous, heterogeneous, proportional - see population.py for description
+    #social_threshold = {'alpha': 1000, 'beta': 1}
+    social_threshold = {'k': 1.1, 'theta': 1}
+    #social_threshold = {'k': 70, 'theta': 100}
+    social_type = 'homogeneous' #values: homogeneous, heterogeneous, proportional - see population.py for description
     mavericks = 0 # what proportion to make complete mavericks. Only has an effect for social_type = proportional
     tolerance = 0 # how much decrease in value they can handle before doing social learning. 0 = looks at social info anytime goes downhill
     resilience = 1 # rate at which their social threshold decreases if they aren't climbing. 1 = stays constant (the effect is multiplicative)
@@ -137,7 +139,7 @@ if __name__ == "__main__":
     except:
         sim_type = 'silent'
     if sim_type == "browser":
-        simulation = Simulation(GlobalParams, {}, sim_type)
+        simulation = Simulation(GlobalParams, {}, sim_type, 'all')
         simulation.run()
     else:
         if sim_type == 'test':
@@ -150,19 +152,27 @@ if __name__ == "__main__":
         param_file = "../data/param{}.json".format(file_id)
 
         sim_parameters = {
-         'social_threshold': [{'k': 1.1, 'theta': 0.05},
-         {'k': 1.1, 'theta': 0.2},
-         {'k': 1.1, 'theta': 0.35},
-         {'k': 1.1, 'theta': 0.5}],
-         'noise': [2, 6, 12],
-         'tolerance': [x/5 for x in range(3)],
+         #https://www.essycode.com/distribution-viewer/
+         'social_threshold': [{'k': 1, 'theta': 0.05},
+             {'k': 1, 'theta': 0.2},
+             {'k': 1, 'theta': 0.35},
+             {'k': 1, 'theta': 0.5}],
+         'noise': [6],
+         #'tolerance': [0, 0.2, 0.4],
          'resilience': [0.95, 0.995, 1.0],
-         'hill_width': [3, 6],
+         #'hill_width': [3, 6],
+         'depletion_rate': [0.1, 0.2, 0.3, 0.4],
          'social_type': ['heterogeneous', 'homogeneous']
         }
 
         with open(param_file, "w") as file_out:
-            json.dump(sim_parameters, file_out, indent=4)
+            # store all (global and simulation-specific) parameters
+            all_params = vars(GlobalParams)
+            all_params = {x: all_params[x] for x in all_params if '__' not in x}
+            print(all_params)
+            for param in sim_parameters:
+                all_params[param] = sim_parameters[param]
+            json.dump(all_params, file_out, indent=4)
 
         keys = sim_parameters.keys()
         values = (sim_parameters[key] for key in keys)
@@ -185,13 +195,3 @@ if __name__ == "__main__":
         tasks = [(GlobalParams,np.random.choice(run_list), i) for i in range(R)]
         with concurrent.futures.ProcessPoolExecutor() as executor:
             results_ = list(tqdm(executor.map(singleRun, tasks), total=R)) # list() needed for tqdm to work for some reason
-
-        # else:
-        #     for sim in tqdm(range(R)):
-        #         run_parameters = np.random.choice(run_list)
-        #         # run_parameters = {}
-        #         simulation = Simulation(GlobalParams, run_parameters, sim_type)
-        #         simulation.run()
-        #         run_data = simulation.getData(sim)
-        #         print_header = sim==0
-        #         run_data.to_csv(data_file, mode="a", header=print_header, index=False)

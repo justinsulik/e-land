@@ -193,9 +193,12 @@ class Population():
             if intolerable_decrease:
                 # Lower the agent's resilience because of failure to climb
                 agent['social_threshold'] = round(agent['social_threshold'] * agent['resilience'], 3)
-                # Find out out much agent could learn
-                inclines = self.checkSocialLearning(i)
-                max_learnable = np.nanmax(inclines)
+                # Find out out much agent could learn (which means there must be at least one other agent)
+                if len(self.agents) > 1:
+                    inclines = self.checkSocialLearning(i)
+                    max_learnable = np.nanmax(inclines)
+                else:
+                    max_learnable = -999
                 # Check if that amount is above threshold
                 if max_learnable > agent['social_threshold']:
                     # If yes, identify best candidate to follow
