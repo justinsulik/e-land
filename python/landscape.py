@@ -14,6 +14,7 @@ class Landscape():
         self.x_size = params.map_size
         self.y_size = params.map_size
         self.depletion = params.depletion
+        self.sig_threshold = params.sig_threshold
 
         # GRID
         # Each patch in grid is defined by:

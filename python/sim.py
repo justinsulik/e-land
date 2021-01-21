@@ -1,7 +1,7 @@
 import sys, os, re, itertools, concurrent.futures
 from landscape import Landscape
 from population import Population
-from plot import plot3d
+#from plot import plot3d
 from tqdm import tqdm
 import json, pandas as pd, numpy as np
 
@@ -15,11 +15,11 @@ class GlobalParams():
 
     # EPISTEMIC PARAMETERS
     desert = 10 #below which value is a patch considered desert (used for initial placement)
-    #sigThreshold = 10
-    depletion = 0.2
+    sig_threshold = 0 #below which value a patch isn't worth excavating (used for evaluating epistemic work)
+    depletion = 0.1
 
     # HILLS
-    hill_number = 1
+    hill_number = 2
     hill_width = 3
     #hill_distance = 1 #1 = max poss equal spacing in landscape size
 
@@ -29,11 +29,11 @@ class GlobalParams():
     octaves = 4
 
     # AGENTS
-    agent_number = 1
+    agent_number = 40
     velocity = 0.4
 
-    #social_threshold = {'alpha': 1000, 'beta': 1}
-    social_threshold = {'k': 1.1, 'theta': 1}
+    social_threshold = {'alpha': 1, 'beta': 10}
+    # social_threshold = {'k': 20, 'theta': 20}
     #social_threshold = {'k': 70, 'theta': 100}
     social_type = 'homogeneous' #values: homogeneous, heterogeneous, proportional - see population.py for description
     mavericks = 0 # what proportion to make complete mavericks. Only has an effect for social_type = proportional

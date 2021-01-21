@@ -53,7 +53,7 @@ class Population():
         self.agents['velocity'] = params.velocity
         self.agents['resilience'] = params.resilience
 
-        # SOCIAL LEARNING
+        # SET SOCIAL LEARNING THRESHOLDS
         # Set values in range (0,1)
         if params.social_type == 'homogeneous':
             # If population is homogenous, everyone gets same values - the mean of the distribution
@@ -83,7 +83,7 @@ class Population():
             # If proportional, set a certain proportion of the population to be true mavericks and the rest conformists
             mavericks_number = int(round(params.mavericks*self.agent_number, 0))
             conformists_number = self.agent_number - mavericks_number
-            social_thresholds = mavericks_number*[10] + conformists_number*[0]
+            social_thresholds = mavericks_number*[100] + conformists_number*[0]
             self.agents['social_threshold'] = social_thresholds
             tolerance_thresholds = mavericks_number*[1] + conformists_number*[0]
             self.agents['tolerance'] = tolerance_thresholds
@@ -92,6 +92,7 @@ class Population():
 
         #PLACE ALL AGENTS IN THE DESERT
         for agent in self.agents:
+            # Iteratively check if the random placement is below the minimum significance for it to count as the desert
             low = False
             while not low:
                 x = np.random.uniform(0,self.landscape.x_size)
@@ -118,7 +119,6 @@ class Population():
 
     def findPatches(self):
         # At the end of each round, calculate patches for all agents, reduces unnecessary np.round()
-        # Update height while at it
         self.agents['x_patch'] = np.floor(self.agents['x'])
         self.agents['y_patch'] = np.floor(self.agents['y'])
 
@@ -143,11 +143,11 @@ class Population():
     def consume(self, depletion_rate):
         for agent in self.agents:
             significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
-            if significance >= depletion_rate:
+            if significance >= depletion_rate + self.landscape.sig_threshold:
                 new_significance = significance - depletion_rate
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
-            elif 0 < significance < depletion_rate:
-                self.landscape.setSig(agent['x_patch'], agent['y_patch'], 0)
+            elif self.landscape.sig_threshold < significance < depletion_rate:
+                self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
 
 
     def updateHeight(self):
@@ -155,7 +155,7 @@ class Population():
             agent['previous_height'] = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
 
     def checkSocialLearning(self, i):
-        # Find out the amounts that could be learned (as inclines) from all other agents
+        # Find out the amounts that could be learned (as slopes) from all other agents
         agent = self.agents[i]
         agentX = agent['x']
         agentY = agent['y']
@@ -165,13 +165,16 @@ class Population():
         distY2 = self.landscape.y_size - distY1 #WRAPPED DISTANCE
         distX = np.minimum(distX2,distX1)
         distY = np.minimum(distY2,distY1)
-        heightDeltas = self.agents['previous_height'] - self.landscape.getSig(agent['x_patch'],agent['y_patch']) #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
+        othersHeights = self.agents['previous_height']
+        # Don't follow anyone who is at or below the significance threshold: they have no epistemic value to offer!
+        othersHeights[othersHeights <= self.landscape.sig_threshold] = np.nan
+        heightDeltas = othersHeights - self.landscape.getSig(agent['x_patch'],agent['y_patch']) #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
         distX[i] = np.nan # agents can't follow themselves
-        distY[i] = np.nan
+        distY[i] = np.nan # agents can't follow themselves
 
         dist = np.sqrt(distX**2 + distY**2)
-        denominator = dist
-        inclines = heightDeltas / denominator
+        # denominator = dist
+        inclines = heightDeltas / dist
         return(inclines)
 
     def goneTooFarDown(self, i):
@@ -186,7 +189,8 @@ class Population():
             return False
 
     def explore(self):
-        # self.landscape.incVisit(agent['x_patch'],agent['y_patch'])
+        # Do general exploration, and check progress (uphill vs. too far downhill)
+        # If too far downhill, make a decision about learning strategy
         for i, agent in enumerate(self.agents):
             intolerable_decrease = self.goneTooFarDown(i)
             agent = self.agents[i]
@@ -196,9 +200,13 @@ class Population():
                 # Find out out much agent could learn (which means there must be at least one other agent)
                 if len(self.agents) > 1:
                     inclines = self.checkSocialLearning(i)
-                    max_learnable = np.nanmax(inclines)
+                    # Check if all inclines are nan (because all other agents are below the significance threshold, and thus not worth learning from)
+                    if np.isnan(inclines).all(0):
+                        max_learnable = -9999
+                    else:
+                        max_learnable = np.nanmax(inclines)
                 else:
-                    max_learnable = -999
+                    max_learnable = -9999
                 # Check if that amount is above threshold
                 if max_learnable > agent['social_threshold']:
                     # If yes, identify best candidate to follow
