@@ -1,6 +1,6 @@
 import numpy as np
 
-# Since the agent info is passed to the js script as a dict, but is handled here as a tuple,
+# Since the agent info is passed to the js script as a dict, but is handled as a tuple in the numpy matrices here,
 # this dict maps between the agent info keys and tuple indices
 key_dict = {'id': 0,
     'x': 1,
@@ -29,7 +29,7 @@ class Population():
         self.base_velocity = params.velocity
         self.agents = np.zeros((self.agent_number),dtype=[('id', 'i4'),
                                                   ('x','f4'),('y','f4'), #position on continuum
-                                                  ('x_patch','i4'),('y_patch','i4'), #position on grid
+                                                  ('x_patch','i4'), ('y_patch','i4'), #position on grid
                                                   ('height','f4'),
                                                   ('heading','f4'),
                                                   ('velocity','f4'),
@@ -57,15 +57,23 @@ class Population():
         # Set values in range (0,1)
         if params.social_type == 'homogeneous':
             # If population is homogenous, everyone gets same values - the mean of the distribution
-            # mean of beta distribution (a,b) = a/(a+b)
-            # mean of gamma distribution (k, theta) = k*theta
-            # mean of binomial distribution (1, p) = p
+            # The distribution can be beta, gamma or binomial or constant,
+            # according to what keys are in params.social_threshold
+            # As a reminder:
+                # mean of beta distribution (a,b) = a/(a+b)
+                # mean of gamma distribution (k, theta) = k*theta
+                # mean of binomial distribution (1, p) = p !! Not implemented yet
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
+                # it's a beta distribution
                 self.agents['social_threshold'] = params.social_threshold['alpha']/(params.social_threshold['alpha']+params.social_threshold['beta'])
             elif 'k' in params.social_threshold and 'theta' in params.social_threshold:
+                # it's a gamma distribution
                 self.agents['social_threshold'] = params.social_threshold['k']*params.social_threshold['theta']
+            elif 'slope' in params.social_threshold:
+                # constant value, everyone gets the same
+                self.agents['social_threshold'] = params.social_threshold['slope']
             else:
-                raise Exception("social_threshold must EITHER have alpha, beta values OR have k, theta values")
+                raise Exception("social_threshold must EITHER have alpha & beta values OR have k & theta values")
             self.agents['tolerance'] = params.tolerance
         elif params.social_type == 'heterogeneous':
             # If population is heterogeneous, draw randomly from beta/gamma/binomial distributions
@@ -100,9 +108,9 @@ class Population():
                 if 0 <= self.landscape.getSig(int(x),int(y)) < params.desert:
                     agent['x'] = x
                     agent['y'] = y
-                    agent['x_patch'] = int(x)
-                    agent['y_patch'] = int(y)
                     low = True
+        self.agents['x_patch'] = np.floor(self.agents['x'])
+        self.agents['y_patch'] = np.floor(self.agents['y'])
 
     def reportAgents(self):
         """
@@ -119,6 +127,10 @@ class Population():
 
     def findPatches(self):
         # At the end of each round, calculate patches for all agents, reduces unnecessary np.round()
+        # but first update to reflect their previous patch
+        self.agents['previous_x_patch'] = np.floor(self.agents['x'])
+        self.agents['previous_y_patch'] = np.floor(self.agents['y'])
+
         self.agents['x_patch'] = np.floor(self.agents['x'])
         self.agents['y_patch'] = np.floor(self.agents['y'])
 
@@ -149,32 +161,35 @@ class Population():
             elif 0 < significance < depletion_rate:
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], 0)
 
-
     def updateHeight(self):
         for agent in self.agents:
             agent['previous_height'] = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
 
     def checkSocialLearning(self, i):
-        # Find out the amounts that could be learned (as slopes) from all other agents
+        # Find out the amounts that could be learned (height/distance, i.e. as slopes) from all other agents
+        # Find out where focal agent is
         agent = self.agents[i]
         agentX = agent['x']
         agentY = agent['y']
+        # Calculate distance to all agents (in 2 directions, given that the landscape wraps around)
         distX1 = self.agents['x']-agentX
         distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
         distY1 = self.agents['y']-agentY
         distY2 = self.landscape.y_size - distY1 #WRAPPED DISTANCE
         distX = np.minimum(distX2,distX1)
         distY = np.minimum(distY2,distY1)
+        # Calculate how high others were at the end of the previous time step
         othersHeights = self.agents['previous_height']
         # Don't follow anyone who is below the significance threshold: they have no epistemic value to offer!
         othersHeights[othersHeights < self.landscape.sig_threshold] = np.nan
-        heightDeltas = othersHeights - self.landscape.getSig(agent['x_patch'],agent['y_patch']) #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
+        # Compare your own elevation to the height of others
+        heightDeltas = othersHeights - self.landscape.getSig(agent['x_patch'],agent['y_patch'])
         distX[i] = np.nan # agents can't follow themselves
         distY[i] = np.nan # agents can't follow themselves
 
-        dist = np.sqrt(distX**2 + distY**2)
-        denominator = dist
-        inclines = heightDeltas / denominator
+        # Calculate distance
+        distance = np.sqrt(distX**2 + distY**2)
+        inclines = heightDeltas / distance
         return(inclines)
 
     def goneTooFarDown(self, i):

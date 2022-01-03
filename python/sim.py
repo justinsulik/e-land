@@ -11,12 +11,12 @@ class GlobalParams():
     General parameters for the run of simulations
     """
     map_size = 40
-    timesteps = 400
+    timesteps = 500
 
     # EPISTEMIC PARAMETERS
     desert = 2 #below which value is a patch considered desert (used for initial placement)
     sig_threshold = 0 #below which value a patch isn't worth excavating (used for evaluating epistemic work)
-    depletion = 0.2
+    depletion = 0.1
 
     # HILLS
     hill_number = 2
@@ -29,10 +29,11 @@ class GlobalParams():
     octaves = 4
 
     # AGENTS
-    agent_number = 40
+    agent_number = 20
     velocity = 0.4
 
-    social_threshold = {'alpha': 1, 'beta': 1}
+    social_threshold = {'alpha': 1, 'beta': 9}
+    # social_threshold = {'slope': 10000000}
     # social_threshold = {'k': 20, 'theta': 20}
     #social_threshold = {'k': 70, 'theta': 100}
     social_type = 'homogeneous' #values: homogeneous, heterogeneous, proportional - see population.py for description
@@ -157,27 +158,28 @@ if __name__ == "__main__":
          # 'social_threshold': [{'k': 1.1, 'theta': 0.05},
          #     # {'k': 1, 'theta': 0.2},
          #     # {'k': 1, 'theta': 0.35},
-             # {'k': 1.1, 'theta': 0.5}],
-         'social_threshold': [{'alpha': 1, 'beta': 9},
-             {'alpha': 3, 'beta': 7},
-             {'alpha': 5, 'beta': 5},
-             {'alpha': 7, 'beta': 3},
-             {'alpha': 9, 'beta': 1}],
-         'noise': [1,6,10],
-         'tolerance': [0, 0.2, 0.4],
-         # 'resilience': [0.95, 0.995, 1.0],
-         # 'hill_width': [3, 6],
-         # 'depletion_rate': [0.1, 0.2, 0.3, 0.4],
-         'social_type': ['heterogeneous', 'homogeneous'],
-         'sig_threshold': [-10]
+        #      # {'k': 1.1, 'theta': 0.5}],
+        #  'social_threshold': [{'alpha': 1, 'beta': 9}
+        #     # {'alpha': 3, 'beta': 7},
+        #     # {'alpha': 5, 'beta': 5},
+        #     # {'alpha': 7, 'beta': 3},
+        #     # {'alpha': 9, 'beta': 1}
+        # ],
+        #  #'noise': [1,6,10],
+        #  #'tolerance': [0, 0.2, 0.4],
+        #  # 'resilience': [0.95, 0.995, 1.0],
+        #  # 'hill_width': [3, 6],
+        #  # 'depletion_rate': [0.1, 0.2, 0.3, 0.4],
+        #  'social_type': ['heterogeneous', 'homogeneous'],
+        #  'sig_threshold': [-10]
         }
 
         keys = sim_parameters.keys()
         values = (sim_parameters[key] for key in keys)
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
 
-        R = 200*len(run_list) # get roughly 200 runs per cell
-        # R = 10
+        #R = 200*len(run_list) # get roughly 200 runs per cell
+        R = 1
 
         headers = 'timestep,mass,sim,'
         for i, param in enumerate(sim_parameters):
