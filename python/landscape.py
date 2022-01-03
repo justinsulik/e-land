@@ -126,7 +126,7 @@ class Landscape():
             self.incrementHeight(x,y,round(amplitude*height,4))
 
     def epistemicMass(self):
-        # Current epistemic mass remaining
+        # Current epistemic mass remaining (above the significance threshold)
         return(np.sum(self.grid['height'][self.grid['height']>0]))
 
     def epistemicMassDiscovered(self):

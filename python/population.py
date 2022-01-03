@@ -143,11 +143,11 @@ class Population():
     def consume(self, depletion_rate):
         for agent in self.agents:
             significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
-            if significance >= depletion_rate + self.landscape.sig_threshold:
+            if significance >= depletion_rate:
                 new_significance = significance - depletion_rate
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
-            elif self.landscape.sig_threshold < significance < depletion_rate:
-                self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
+            elif 0 < significance < depletion_rate:
+                self.landscape.setSig(agent['x_patch'], agent['y_patch'], 0)
 
 
     def updateHeight(self):
@@ -166,15 +166,15 @@ class Population():
         distX = np.minimum(distX2,distX1)
         distY = np.minimum(distY2,distY1)
         othersHeights = self.agents['previous_height']
-        # Don't follow anyone who is at or below the significance threshold: they have no epistemic value to offer!
-        othersHeights[othersHeights <= self.landscape.sig_threshold] = np.nan
+        # Don't follow anyone who is below the significance threshold: they have no epistemic value to offer!
+        othersHeights[othersHeights < self.landscape.sig_threshold] = np.nan
         heightDeltas = othersHeights - self.landscape.getSig(agent['x_patch'],agent['y_patch']) #COMPARE YOUR OWN ELEVATION TO HEIGHT OF OTHERS AT LAST TIMESTEP
         distX[i] = np.nan # agents can't follow themselves
         distY[i] = np.nan # agents can't follow themselves
 
         dist = np.sqrt(distX**2 + distY**2)
-        # denominator = dist
-        inclines = heightDeltas / dist
+        denominator = dist
+        inclines = heightDeltas / denominator
         return(inclines)
 
     def goneTooFarDown(self, i):

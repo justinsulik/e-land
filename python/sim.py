@@ -14,9 +14,9 @@ class GlobalParams():
     timesteps = 400
 
     # EPISTEMIC PARAMETERS
-    desert = 10 #below which value is a patch considered desert (used for initial placement)
+    desert = 2 #below which value is a patch considered desert (used for initial placement)
     sig_threshold = 0 #below which value a patch isn't worth excavating (used for evaluating epistemic work)
-    depletion = 0.1
+    depletion = 0.2
 
     # HILLS
     hill_number = 2
@@ -32,7 +32,7 @@ class GlobalParams():
     agent_number = 40
     velocity = 0.4
 
-    social_threshold = {'alpha': 1, 'beta': 10}
+    social_threshold = {'alpha': 1, 'beta': 1}
     # social_threshold = {'k': 20, 'theta': 20}
     #social_threshold = {'k': 70, 'theta': 100}
     social_type = 'homogeneous' #values: homogeneous, heterogeneous, proportional - see population.py for description
@@ -63,6 +63,7 @@ class Simulation():
         self.population = Population(self.landscape, self.params)
 
         for timestep in range(self.params.timesteps):
+            # This is the stuff that gets done at each timestep
             self.updateData(timestep)
             self.population.explore()
             self.population.move()
@@ -78,7 +79,7 @@ class Simulation():
             self.report("data", json.dumps({'landscape': self.landscape.reportGrid(), 'population': self.population.reportAgents()}))
         else:
             if self.reportsteps == 'all' or timestep==self.params.timesteps-1:
-                # Before each timesteo OR just final timestep, store the current state of the simulation
+                # Before each timestep OR just final timestep, store the current state of the simulation
                 step_data = {'timestep': timestep,
                     'mass': self.landscape.epistemicMassDiscovered()}
                 self.data[timestep] = step_data
@@ -125,8 +126,8 @@ def fileSuffix(sim_type):
         return(max_id + 1)
 
 def singleRun(inputs):
-    glob, loc, i = inputs
-    simulation = Simulation(glob, loc, 'silent', 'final')
+    glob, loc, i, data_file = inputs
+    simulation = Simulation(glob, loc, 'silent', 'all')
     simulation.run()
     run_data = simulation.getData(i)
     run_data.to_csv(data_file, mode="a", header=False, index=False)
@@ -153,45 +154,54 @@ if __name__ == "__main__":
 
         sim_parameters = {
          #https://www.essycode.com/distribution-viewer/
-         'social_threshold': [{'k': 1, 'theta': 0.05},
-             {'k': 1, 'theta': 0.2},
-             {'k': 1, 'theta': 0.35},
-             {'k': 1, 'theta': 0.5}],
-         'noise': [6],
-         #'tolerance': [0, 0.2, 0.4],
-         'resilience': [0.95, 0.995, 1.0],
-         #'hill_width': [3, 6],
-         'depletion_rate': [0.1, 0.2, 0.3, 0.4],
-         'social_type': ['heterogeneous', 'homogeneous']
+         # 'social_threshold': [{'k': 1.1, 'theta': 0.05},
+         #     # {'k': 1, 'theta': 0.2},
+         #     # {'k': 1, 'theta': 0.35},
+             # {'k': 1.1, 'theta': 0.5}],
+         'social_threshold': [{'alpha': 1, 'beta': 9},
+             {'alpha': 3, 'beta': 7},
+             {'alpha': 5, 'beta': 5},
+             {'alpha': 7, 'beta': 3},
+             {'alpha': 9, 'beta': 1}],
+         'noise': [1,6,10],
+         'tolerance': [0, 0.2, 0.4],
+         # 'resilience': [0.95, 0.995, 1.0],
+         # 'hill_width': [3, 6],
+         # 'depletion_rate': [0.1, 0.2, 0.3, 0.4],
+         'social_type': ['heterogeneous', 'homogeneous'],
+         'sig_threshold': [-10]
         }
-
-        with open(param_file, "w") as file_out:
-            # store all (global and simulation-specific) parameters
-            all_params = vars(GlobalParams)
-            all_params = {x: all_params[x] for x in all_params if '__' not in x}
-            print(all_params)
-            for param in sim_parameters:
-                all_params[param] = sim_parameters[param]
-            json.dump(all_params, file_out, indent=4)
 
         keys = sim_parameters.keys()
         values = (sim_parameters[key] for key in keys)
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
 
-        R = 100*len(run_list) # get roughly 100 runs per cell
+        R = 200*len(run_list) # get roughly 200 runs per cell
         # R = 10
 
         headers = 'timestep,mass,sim,'
         for i, param in enumerate(sim_parameters):
             if param == 'social_threshold':
-                # headers+= 'social_threshold_alpha,social_threshold_beta,'
-                headers+= 'social_threshold_k,social_threshold_theta,'
+                if 'alpha' in sim_parameters[param][0]:
+                    headers+= 'social_threshold_alpha,social_threshold_beta,'
+                if 'theta' in sim_parameters[param][0]:
+                    headers+= 'social_threshold_k,social_threshold_theta,'
             elif i<len(sim_parameters)-1:
                 headers += param + ','
             else:
                 headers += param + '\n'
+        #print(headers)
         with open(data_file, "w") as f:
             f.write(headers)
-        tasks = [(GlobalParams,np.random.choice(run_list), i) for i in range(R)]
+        tasks = [(GlobalParams, np.random.choice(run_list), i, data_file) for i in range(R)]
+        # print(tasks)
         with concurrent.futures.ProcessPoolExecutor() as executor:
             results_ = list(tqdm(executor.map(singleRun, tasks), total=R)) # list() needed for tqdm to work for some reason
+
+        with open(param_file, "w") as file_out:
+            # store all (global and simulation-specific) parameters
+            all_params = vars(GlobalParams)
+            all_params = {x: all_params[x] for x in all_params if '__' not in x}
+            for param in sim_parameters:
+                all_params[param] = sim_parameters[param]
+            json.dump(all_params, file_out, indent=4)
