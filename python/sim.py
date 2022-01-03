@@ -45,11 +45,17 @@ class Simulation():
     """
     Class for an individual simulation run, combining global parameters with run-specific parameters
     """
-    def __init__(self,global_params,run_params,sim_type,reportsteps):
+    def __init__(self,global_params,run_params,sim_type,detail):
         self.params = global_params
         self.sim_type = sim_type
         self.changed = []
-        self.reportsteps = reportsteps
+        # 3 levels of detail in reporting are available
+        # all time steps (no agents): 'time'
+        # all agents (no time steps): 'agents'
+        # neither: 'basic'
+        # (all times and all agents seems overkill for now...)
+        self.reportsteps = detail == 'all'
+        self.reportagents = detail == 'agent'
         for param_name in run_params:
             # Keep track of which parameters are specific to this run
             self.changed.append(param_name)
@@ -59,7 +65,8 @@ class Simulation():
     def run(self):
         # One run of the simulation, consisting of multiple timesteps during which agents do stuff
         self.report('message', "Python: sim starting...")
-        self.data = {}
+        self.group_data = {}
+        self.agent_data = {}
         self.landscape = Landscape(self.params)
         self.population = Population(self.landscape, self.params)
 
@@ -79,15 +86,18 @@ class Simulation():
         if self.sim_type == 'browser':
             self.report("data", json.dumps({'landscape': self.landscape.reportGrid(), 'population': self.population.reportAgents()}))
         else:
-            if self.reportsteps == 'all' or timestep==self.params.timesteps-1:
+            if self.reportsteps or timestep==self.params.timesteps-1:
                 # Before each timestep OR just final timestep, store the current state of the simulation
                 step_data = {'timestep': timestep,
                     'mass': self.landscape.epistemicMassDiscovered()}
-                self.data[timestep] = step_data
+                self.group_data[timestep] = step_data
+            if self.report agents:
+                self.agent_data = self.population.
 
-    def getData(self, sim):
-        # Include whatever variables have changed in this specific run in the run's data
-        data_out = pd.DataFrame.from_dict(self.data, orient="index")
+    def getGroupData(self, sim):
+        # Include whatever variables have changed in this specific run in the run's data,
+        # focusing on group-level outcomes
+        data_out = pd.DataFrame.from_dict(self.group_data, orient="index")
         data_out['sim'] = sim
         for param_name in self.changed:
             param_value = getattr(self.params, param_name)
@@ -127,10 +137,10 @@ def fileSuffix(sim_type):
         return(max_id + 1)
 
 def singleRun(inputs):
-    glob, loc, i, data_file = inputs
-    simulation = Simulation(glob, loc, 'silent', 'all')
+    glob, loc, i, data_file, detail = inputs
+    simulation = Simulation(glob, loc, 'silent', detail)
     simulation.run()
-    run_data = simulation.getData(i)
+    run_data = simulation.getGroupData(i)
     run_data.to_csv(data_file, mode="a", header=False, index=False)
     return("done")
 
@@ -140,8 +150,13 @@ if __name__ == "__main__":
         sim_type = sys.argv[1]
     except:
         sim_type = 'silent'
+    try:
+        # detail = report every time step or just final outcome
+        detail = sys.argv[2]
+    except:
+        detail = 'all'
     if sim_type == "browser":
-        simulation = Simulation(GlobalParams, {}, sim_type, 'all')
+        simulation = Simulation(GlobalParams, {}, sim_type, detail)
         simulation.run()
     else:
         if sim_type == 'test':
@@ -151,6 +166,7 @@ if __name__ == "__main__":
         file_id = fileSuffix(sim_type)
         data_file = "../data/data{}.csv".format(file_id)
         print('will save to {}'.format(data_file))
+        print('detail', detail)
         param_file = "../data/param{}.json".format(file_id)
 
         sim_parameters = {
@@ -181,21 +197,24 @@ if __name__ == "__main__":
         #R = 200*len(run_list) # get roughly 200 runs per cell
         R = 1
 
-        headers = 'timestep,mass,sim,'
-        for i, param in enumerate(sim_parameters):
-            if param == 'social_threshold':
-                if 'alpha' in sim_parameters[param][0]:
-                    headers+= 'social_threshold_alpha,social_threshold_beta,'
-                if 'theta' in sim_parameters[param][0]:
-                    headers+= 'social_threshold_k,social_threshold_theta,'
-            elif i<len(sim_parameters)-1:
-                headers += param + ','
-            else:
-                headers += param + '\n'
+        headers = 'timestep,mass,sim'
+        if len(sim_parameters)==0:
+            headers += '\n'
+        else:
+            for i, param in enumerate(sim_parameters):
+                if param == 'social_threshold':
+                    if 'alpha' in sim_parameters[param][0]:
+                        headers+= 'social_threshold_alpha,social_threshold_beta,'
+                    if 'theta' in sim_parameters[param][0]:
+                        headers+= 'social_threshold_k,social_threshold_theta,'
+                elif i<len(sim_parameters)-1:
+                    headers += param + ','
+                else:
+                    headers += param + '\n'
         #print(headers)
         with open(data_file, "w") as f:
             f.write(headers)
-        tasks = [(GlobalParams, np.random.choice(run_list), i, data_file) for i in range(R)]
+        tasks = [(GlobalParams, np.random.choice(run_list), i, data_file, detail) for i in range(R)]
         # print(tasks)
         with concurrent.futures.ProcessPoolExecutor() as executor:
             results_ = list(tqdm(executor.map(singleRun, tasks), total=R)) # list() needed for tqdm to work for some reason

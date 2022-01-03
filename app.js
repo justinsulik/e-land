@@ -13,7 +13,9 @@ app.get('/', (req, res, next) => {
     let runPy = new Promise(function(resolve, reject) {
         console.log("Node: python starting...");
         const { spawn } = require('child_process');
-        const pyprog = spawn('python3', ['python/sim.py', 'browser']);
+        // 'browser' tells the pythons script that this is the source of the call
+        // 'all' tells the simulation to report every time step
+        const pyprog = spawn('python3', ['python/sim.py', 'browser', 'all']);
         let python_out = '';
         // add data to string for eventual passing to the front end
         pyprog.stdout.on('data', function(data) {
