@@ -21,6 +21,9 @@ app.get('/', (req, res, next) => {
         pyprog.stdout.on('data', function(data) {
             python_out += data.toString();
         });
+        pyprog.stdout.on('message', function(data) {
+            console.log(data)
+        });
 
         // handle errors
         pyprog.stderr.on('data', (data) => {

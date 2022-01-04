@@ -113,7 +113,7 @@ class Landscape():
         pnf = PerlinNoiseFactory(2, octaves=octaves, tile=(self.x_size, self.y_size))
         for x, y in [[x,y] for x in range(self.x_size) for y in range(self.x_size)]:
             # adding noise/x at the end because otherwise 50% of landscape is below 0
-            self.incrementHeight(x, y, round(noise*pnf(x/smoothing, y/smoothing), 4))
+            self.incrementHeight(x, y, round(noise*pnf(x/smoothing, y/smoothing), 3))
 
     def addGaussian(self,x_center,y_center,amplitude,sd):
         """
@@ -127,8 +127,8 @@ class Landscape():
 
     def epistemicMass(self):
         # Current epistemic mass remaining (above the significance threshold)
-        return(np.sum(self.grid['height'][self.grid['height']>0]))
+        return(np.sum(self.grid['height'][self.grid['height']>self.sig_threshold]))
 
     def epistemicMassDiscovered(self):
         # How much of the original epistemic mass has been discovered by agents so far
-        return(round(1 - self.epistemicMass()/self.total_epistemic_mass, 4))
+        return(round(1 - self.epistemicMass()/self.total_epistemic_mass, 3))

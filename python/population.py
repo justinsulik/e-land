@@ -1,7 +1,8 @@
 import numpy as np
+from collections import defaultdict
 
-# Since the agent info is passed to the js script as a dict, but is handled as a tuple in the numpy matrices here,
-# this dict maps between the agent info keys and tuple indices
+# Since the agent info is passed to the js script as a dict, but is handled as a structured array in the numpy matrices here,
+# this dict maps between the agent info keys and array indices
 key_dict = {'id': 0,
     'x': 1,
     'y': 2,
@@ -16,7 +17,8 @@ key_dict = {'id': 0,
     'social_threshold': 11,
     'status': 12,
     'tolerance': 13,
-    'resilience': 14}
+    'resilience': 14,
+    'highest_point': 15}
 
 class Population():
 
@@ -26,8 +28,8 @@ class Population():
         """
         self.landscape = landscape
         self.agent_number = params.agent_number
-        self.base_velocity = params.velocity
-        self.agents = np.zeros((self.agent_number),dtype=[('id', 'i4'),
+        self.agents = np.zeros((self.agent_number),dtype=[
+                                                  ('id', 'i4'),
                                                   ('x','f4'),('y','f4'), #position on continuum
                                                   ('x_patch','i4'), ('y_patch','i4'), #position on grid
                                                   ('height','f4'),
@@ -38,31 +40,40 @@ class Population():
                                                   ('social_threshold','f4'),
                                                   ('status', 'i4'),
                                                   ('tolerance', 'i4'),
-                                                  ('resilience', 'f4')])
-
+                                                  ('resilience', 'f4'),
+                                                  ('highest_point', 'f4'),
+                                                  ('consumed', 'f4'),
+                                                  ('starting_x', 'i4'), ('starting_y', 'i4')])
         # INITIALIZE AGENTS
         # assign index id
         self.agents['id'] = range(self.agent_number)
         # set heading to random
         self.agents['heading'] = np.random.uniform(0,2*np.pi,self.agent_number)
-        # have not visited any previous patch, so previous_height also 0
+        # have not visited any previous patch, so previous_height is 0
         self.agents['previous_height'] = 0
+        # at the start, each agent has made 0 progress
+        self.agents['consumed'] = 0
         # Set status to explore
         self.agents['status'] = 0
         # set other params to given vals
         self.agents['velocity'] = params.velocity
         self.agents['resilience'] = params.resilience
+        self.agents['tolerance'] = params.tolerance
+
+        # for tracking *unique* patches visited by each agent (uniqueness handled by type "set")
+        self.patches_visited = defaultdict(set)
 
         # SET SOCIAL LEARNING THRESHOLDS
-        # Set values in range (0,1)
+        # The social learning thresholds can be set as:
+            # distributions (beta, gamma)
+            # constants
+            # proportions
+        # if population is homogeneous, everyone gets the same value (e.g., the mean of the distribution)
+        # if population is heterogeneous, everyone gets different valuers (e.g., random sample from the distribution)
         if params.social_type == 'homogeneous':
-            # If population is homogenous, everyone gets same values - the mean of the distribution
-            # The distribution can be beta, gamma or binomial or constant,
-            # according to what keys are in params.social_threshold
             # As a reminder:
                 # mean of beta distribution (a,b) = a/(a+b)
                 # mean of gamma distribution (k, theta) = k*theta
-                # mean of binomial distribution (1, p) = p !! Not implemented yet
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
                 # it's a beta distribution
                 self.agents['social_threshold'] = params.social_threshold['alpha']/(params.social_threshold['alpha']+params.social_threshold['beta'])
@@ -70,33 +81,33 @@ class Population():
                 # it's a gamma distribution
                 self.agents['social_threshold'] = params.social_threshold['k']*params.social_threshold['theta']
             elif 'slope' in params.social_threshold:
-                # constant value, everyone gets the same
+                # constant value, everyone gets the same (there's no heterogeneous version of this)
                 self.agents['social_threshold'] = params.social_threshold['slope']
+            elif 'proportion' in params.social_threshold:
+                # 'proportion' refers to proportion of conformists (p) vs. mavericks (1-p)
+                # (see heterogeneous version below).
+                # However, for 'homogemeous' version of proportion, obviously cant have conformists vs. mavericks
+                # so instead, get weighted mean of the given thresholds: p*conformists + (1-p)*mavericks
+                self.agents['social_threshold'] = params.social_threshold['proportion']*params.social_threshold['conformist_threshold'] + (1-params.social_threshold['proportion'])*params.social_threshold['maverick_threshold']
             else:
-                raise Exception("social_threshold must EITHER have alpha & beta values OR have k & theta values")
-            self.agents['tolerance'] = params.tolerance
+                raise Exception("social_threshold type not recognised")
         elif params.social_type == 'heterogeneous':
-            # If population is heterogeneous, draw randomly from beta/gamma/binomial distributions
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
+                # it's a beta distribution
                 self.agents['social_threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], self.agent_number)
             elif 'k' in params.social_threshold and 'theta' in params.social_threshold:
+                # it's a gamma distribution
                 self.agents['social_threshold'] = np.random.gamma(params.social_threshold['k'], params.social_threshold['theta'], self.agent_number)
+            elif 'proportion' in params.social_threshold and 'conformist_threshold' in params.social_threshold and 'maverick_threshold' in params.social_threshold:
+                # 'proportion' refers to proportion of conformists (p) vs. mavericks (1-p)
+                conformists_count = int(self.agent_number*params.social_threshold['proportion'])
+                mavericks_count = self.agent_number - conformists_count
+                social_thresholds = conformists_count*[params.social_threshold['conformist_threshold']] + mavericks_count*[params.social_threshold['maverick_threshold']]
+                self.agents['social_threshold'] = social_thresholds
             else:
-                raise Exception("social_threshold must EITHER have alpha, beta values OR have k, theta values")
-            self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
-        ## Adjust values according to map size and height, such that base value 1 -- generated above --- maps to max(height)/max(distance)
-        #normalisation_factor = self.landscape.max_height/max(self.landscape.x_size/2, self.landscape.y_size/2)
-        #self.agents['social_threshold'] *= normalisation_factor
-        elif params.social_type == 'proportional':
-            # If proportional, set a certain proportion of the population to be true mavericks and the rest conformists
-            mavericks_number = int(round(params.mavericks*self.agent_number, 0))
-            conformists_number = self.agent_number - mavericks_number
-            social_thresholds = mavericks_number*[100] + conformists_number*[0]
-            self.agents['social_threshold'] = social_thresholds
-            tolerance_thresholds = mavericks_number*[1] + conformists_number*[0]
-            self.agents['tolerance'] = tolerance_thresholds
+                raise Exception("social_threshold type not recognised")
         else:
-            raise Exception("social_type must be one of: homogeneous, heterogeneous, proportional")
+            raise Exception("social_type not recognised")
 
         #PLACE ALL AGENTS IN THE DESERT
         for agent in self.agents:
@@ -105,14 +116,16 @@ class Population():
             while not low:
                 x = np.random.uniform(0,self.landscape.x_size)
                 y = np.random.uniform(0,self.landscape.y_size)
-                if 0 <= self.landscape.getSig(int(x),int(y)) < params.desert:
+                starting_height = self.landscape.getSig(int(x),int(y))
+                if 0 <= starting_height < params.desert:
                     agent['x'] = x
                     agent['y'] = y
+                    agent['highest_point'] = starting_height
                     low = True
-        self.agents['x_patch'] = np.floor(self.agents['x'])
-        self.agents['y_patch'] = np.floor(self.agents['y'])
+        self.agents['starting_x'] = self.agents['x_patch'] = np.floor(self.agents['x'])
+        self.agents['starting_y'] = self.agents['y_patch'] = np.floor(self.agents['y'])
 
-    def reportAgents(self):
+    def trackAgents(self):
         """
         Generate list of agents with x, y, height vals
         """
@@ -125,14 +138,33 @@ class Population():
             'status': agent[key_dict['status']]} for agent in self.agents.tolist()]
         return(agents)
 
-    def findPatches(self):
-        # At the end of each round, calculate patches for all agents, reduces unnecessary np.round()
-        # but first update to reflect their previous patch
-        self.agents['previous_x_patch'] = np.floor(self.agents['x'])
-        self.agents['previous_y_patch'] = np.floor(self.agents['y'])
+    def reportSuccess(self):
+        keys = ['id', 'highest_point', 'social_threshold', 'consumed']
+        data = {x['id']: {key: x[key] for key in keys} for x in self.agents[keys]}
+        for id in self.patches_visited:
+            data[id]['patches_visited'] = len(self.patches_visited[id])
+        return(data)
 
+    def findPatches(self):
+        # Update to reflect their previous patch
+        self.agents['previous_x_patch'] = self.agents['x_patch']
+        self.agents['previous_y_patch'] = self.agents['y_patch']
+
+    def updatePatches(self):
+        # Reflect current position
         self.agents['x_patch'] = np.floor(self.agents['x'])
         self.agents['y_patch'] = np.floor(self.agents['y'])
+
+        # Track if patch is new
+        same_patch = np.logical_and(self.agents['x_patch'] == self.agents['previous_x_patch'], self.agents['y_patch'] == self.agents['previous_y_patch'])
+
+        # If so, add it to set of patches visited by agents
+        # I wish I knew how to do this without a for-loop
+        for i, same in enumerate(same_patch):
+            if not same:
+                patch = (self.agents[i]['x_patch'], self.agents[i]['y_patch'])
+                self.patches_visited[i].add(patch)
+
 
     def wrap(self,coord,limit):
         """
@@ -160,10 +192,14 @@ class Population():
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
             elif 0 < significance < depletion_rate:
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], 0)
+            agent['consumed'] += significance
 
     def updateHeight(self):
         for agent in self.agents:
-            agent['previous_height'] = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
+            agent_height = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
+            agent['previous_height'] = agent_height
+            if agent_height > agent['highest_point']:
+                agent['highest_point'] = agent_height
 
     def checkSocialLearning(self, i):
         # Find out the amounts that could be learned (height/distance, i.e. as slopes) from all other agents
