@@ -57,7 +57,7 @@ class Simulation():
         # all agents (no time steps): 'agents'
         # neither: 'basic'
         # (all times and all agents seems overkill for now...)
-        self.reportsteps = detail == 'all'
+        self.reportsteps = detail == 'time'
         self.reportagents = detail == 'agents'
         for param_name in run_params:
             # Keep track of which parameters are specific to this run
@@ -98,37 +98,25 @@ class Simulation():
             if self.reportagents and timestep==self.params.timesteps-1:
                 self.agent_data = self.population.reportSuccess()
 
-    def getGroupData(self, sim):
+    def getData(self, sim_number, details='time'):
         # Include whatever variables have changed in this specific run in the run's data,
-        # focusing on group-level outcomes
-        data_out = pd.DataFrame.from_dict(self.group_data, orient="index").round(2)
-        data_out['sim'] = sim
+        if details in ['time', 'basic']:
+            data_out = pd.DataFrame.from_dict(self.group_data, orient="index").round(2)
+        elif details =='agents':
+            data_out = pd.DataFrame.from_dict(self.agent_data, orient="index").round(2)
+        else:
+            raise Exception("details option not recognised (choose from: 'time', 'agents', 'basic')")
+
+        data_out['sim'] = sim_number
         for param_name in self.changed:
             param_value = getattr(self.params, param_name)
             try:
                 #If the param is a dict, save each key as a column
                for key in param_value:
-                   data_out["{}_{}".format(param_name,key)] = param_value[key]
+                   data_out[key] = param_value[key]
             except:
                 #Save the value as a column
                 data_out[param_name] = param_value
-        return(data_out)
-
-    def getAgentsData(self, sim):
-        # Include various metrics of success/behavior for each agent
-        data_out = pd.DataFrame.from_dict(self.agent_data, orient="index").round(2)
-        data_out['sim'] = sim
-        for param_name in self.changed:
-            # not needed because every agent has their own social_threshold
-            if param_name != "social_threshold":
-                param_value = getattr(self.params, param_name)
-                try:
-                    #If the param is a dict, save each key as a column
-                    for key in param_value:
-                        data_out["{}_{}".format(param_name,key)] = param_value[key]
-                except:
-                    #Save the value as a column
-                    data_out[param_name] = param_value
         return(data_out)
 
     def report(self, data_type, data):
@@ -146,10 +134,10 @@ def singleRun(inputs):
     simulation = Simulation(glob, loc, 'silent', detail)
     simulation.run()
     # We'll always need data on the overall/group outcomes
-    group_data = simulation.getGroupData(i)
+    group_data = simulation.getData(i)
     group_data.to_csv(data_file, mode="a", header=False, index=False)
     # If necessary, also provide data on individual agents
     if detail == 'agents':
-        agent_data = simulation.getAgentsData(i)
+        agent_data = simulation.getData(i, 'agents')
         agent_data.to_csv(agents_file, mode="a", header=False, index=False)
     return("done")

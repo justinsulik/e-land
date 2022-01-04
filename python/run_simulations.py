@@ -14,7 +14,7 @@ if __name__ == "__main__":
         # 'time': all time steps (no agents):
         # 'agents': all agents (no time steps)
         # 'basic': just group-level info at end of run (report neither timesteps nor individual agents)
-        # (all times and all agents seems overkill for now...)
+        # (both all times & all agents seems overkill for now...)
         detail = sys.argv[2]
     except:
         detail = 'basic'
@@ -77,9 +77,9 @@ if __name__ == "__main__":
 
         # to store agent-level data and the params that vary across sims
         if detail == 'agents':
-            agents_file = "../data/agents{}.csv".format(file_id) if detail == 'agents' else None
-            agent_columns_to_get = ['id', 'highest_point', 'social_threshold', 'consumed', 'patches_visited', 'sim']
-            agent_file_headers = files.get_agent_headers(sim_parameters, agent_columns_to_get)
+            agents_file = "../data/agents{}.csv".format(file_id)
+            agent_columns_to_get = ['id', 'highest_point', 'threshold', 'consumed', 'patches_visited', 'sim']
+            agent_file_headers = files.get_data_headers(sim_parameters, agent_columns_to_get)
             with open(agents_file, "w") as f:
                 f.write(agent_file_headers)
         else:
@@ -91,9 +91,9 @@ if __name__ == "__main__":
         # get combinations of above keys (params) and values (possible settings of params)
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
         # Either aim to get roughly 200 runs per cell
-        R = 200*len(run_list)
+        #R = 200*len(run_list)
         # OR just set number of runs manually, e.g. for testing
-        # R = 1
+        R = 1
         # Sample randomly from the list of runs
         tasks = [(GlobalParams, random.choice(run_list), i, detail, data_file, agents_file) for i in range(R)]
 

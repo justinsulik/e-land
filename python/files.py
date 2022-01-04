@@ -17,42 +17,29 @@ def fileSuffix(sim_type):
                         max_id = file_id
         return(max_id + 1)
 
-def get_data_headers(sim_parameters):
-    headers = 'timestep,mass,sim'
+def get_data_headers(sim_parameters, agent_columns_to_get=[]):
+    # Is this looking for group-level or agent-level data?
+    if len(agent_columns_to_get)==0:
+        # group-level data only
+        headers = 'timestep,mass,sim'
+    else:
+        # agent-level data
+        headers = ','.join(agent_columns_to_get)
     if len(sim_parameters)==0:
         headers += '\n'
     else:
-        headers += ','
-        for i, param in enumerate(sim_parameters):
-            if param == 'social_threshold':
-                if 'alpha' in sim_parameters[param][0]:
-                    param_name = 'social_threshold_alpha,social_threshold_beta'
-                if 'theta' in sim_parameters[param][0]:
-                    param_name = 'social_threshold_k,social_threshold_theta'
-                if 'slope' in sim_parameters[param][0]:
-                    param_name = 'social_threshold_slope'
-                if 'proportion' in sim_parameters[param][0]:
-                    param_name = 'social_threshold_proportion'
-            else:
-                param_name = param
-            if i<len(sim_parameters)-1:
-                headers += param_name + ','
-            else:
-                print('here')
-                headers += param_name + '\n'
+        headers += ',' + get_sim_headers(sim_parameters)
     return(headers)
 
-def get_agent_headers(sim_parameters, agent_columns_to_get):
-    headers = ','.join(agent_columns_to_get)
-    if len(sim_parameters)==0 or (len(sim_parameters)==1 and 'social_threshold' in sim_parameters):
-        headers += '\n'
-    else:
-        headers += ','
-        for i, param in enumerate(sim_parameters):
-            # don't need sim-level social threshold, as agents have their own
-            if param != 'social_threshold':
-                if i<len(sim_parameters)-1:
-                    headers += param + ','
-                else:
-                    headers += param + '\n'
+def get_sim_headers(sim_parameters):
+    headers = ''
+    for i, param in enumerate(sim_parameters):
+        if param == 'social_threshold':
+            param_name = ','.join(sim_parameters[param][0].keys())
+        else:
+            param_name = param
+        if i<len(sim_parameters)-1:
+            headers += param_name + ','
+        else:
+            headers += param_name + '\n'
     return(headers)

@@ -14,7 +14,7 @@ key_dict = {'id': 0,
     'previous_x_patch': 8,
     'previous_y_patch': 9,
     'previous_height': 10,
-    'social_threshold': 11,
+    'threshold': 11,
     'status': 12,
     'tolerance': 13,
     'resilience': 14,
@@ -37,7 +37,7 @@ class Population():
                                                   ('velocity','f4'),
                                                   ('previous_x_patch','i4'),('previous_y_patch','i4'),
                                                   ('previous_height','f4'),
-                                                  ('social_threshold','f4'),
+                                                  ('threshold','f4'),
                                                   ('status', 'i4'),
                                                   ('tolerance', 'i4'),
                                                   ('resilience', 'f4'),
@@ -77,34 +77,34 @@ class Population():
                 # for more, see https://www.essycode.com/distribution-viewer/
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
                 # it's a beta distribution
-                self.agents['social_threshold'] = params.social_threshold['alpha']/(params.social_threshold['alpha']+params.social_threshold['beta'])
+                self.agents['threshold'] = params.social_threshold['alpha']/(params.social_threshold['alpha']+params.social_threshold['beta'])
             elif 'k' in params.social_threshold and 'theta' in params.social_threshold:
                 # it's a gamma distribution
-                self.agents['social_threshold'] = params.social_threshold['k']*params.social_threshold['theta']
+                self.agents['threshold'] = params.social_threshold['k']*params.social_threshold['theta']
             elif 'slope' in params.social_threshold:
                 # constant value, everyone gets the same (there's no heterogeneous version of this)
-                self.agents['social_threshold'] = params.social_threshold['slope']
+                self.agents['threshold'] = params.social_threshold['slope']
             elif 'proportion' in params.social_threshold:
                 # 'proportion' refers to proportion of conformists (p) vs. mavericks (1-p)
                 # (see heterogeneous version below).
                 # However, for 'homogemeous' version of proportion, obviously cant have conformists vs. mavericks
                 # so instead, get weighted mean of the given thresholds: p*conformists + (1-p)*mavericks
-                self.agents['social_threshold'] = params.social_threshold['proportion']*params.social_threshold['conformist_threshold'] + (1-params.social_threshold['proportion'])*params.social_threshold['maverick_threshold']
+                self.agents['threshold'] = params.social_threshold['proportion']*params.social_threshold['conformist_threshold'] + (1-params.social_threshold['proportion'])*params.social_threshold['maverick_threshold']
             else:
                 raise Exception("social_threshold type not recognised")
         elif params.social_type == 'heterogeneous':
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
                 # it's a beta distribution
-                self.agents['social_threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], self.agent_number)
+                self.agents['threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], self.agent_number)
             elif 'k' in params.social_threshold and 'theta' in params.social_threshold:
                 # it's a gamma distribution
-                self.agents['social_threshold'] = np.random.gamma(params.social_threshold['k'], params.social_threshold['theta'], self.agent_number)
+                self.agents['threshold'] = np.random.gamma(params.social_threshold['k'], params.social_threshold['theta'], self.agent_number)
             elif 'proportion' in params.social_threshold and 'conformist_threshold' in params.social_threshold and 'maverick_threshold' in params.social_threshold:
                 # 'proportion' refers to proportion of conformists (p) vs. mavericks (1-p)
                 conformists_count = int(self.agent_number*params.social_threshold['proportion'])
                 mavericks_count = self.agent_number - conformists_count
                 social_thresholds = conformists_count*[params.social_threshold['conformist_threshold']] + mavericks_count*[params.social_threshold['maverick_threshold']]
-                self.agents['social_threshold'] = social_thresholds
+                self.agents['threshold'] = social_thresholds
             else:
                 raise Exception("social_threshold type not recognised")
         else:
@@ -140,7 +140,7 @@ class Population():
         return(agents)
 
     def reportSuccess(self):
-        keys = ['id', 'highest_point', 'social_threshold', 'consumed']
+        keys = ['id', 'highest_point', 'threshold', 'consumed']
         data = {x['id']: {key: x[key] for key in keys} for x in self.agents[keys]}
         for id in self.patches_visited:
             data[id]['patches_visited'] = len(self.patches_visited[id])
@@ -248,7 +248,7 @@ class Population():
             agent = self.agents[i]
             if intolerable_decrease:
                 # Lower the agent's resilience because of failure to climb
-                agent['social_threshold'] = round(agent['social_threshold'] * agent['resilience'], 3)
+                agent['threshold'] = round(agent['threshold'] * agent['resilience'], 3)
                 # Find out out much agent could learn (which means there must be at least one other agent)
                 if len(self.agents) > 1:
                     inclines = self.checkSocialLearning(i)
@@ -260,7 +260,7 @@ class Population():
                 else:
                     max_learnable = -9999
                 # Check if that amount is above threshold
-                if max_learnable > agent['social_threshold']:
+                if max_learnable > agent['threshold']:
                     # If yes, identify best candidate to follow
                     # (choose randomly if tie)
                     maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
