@@ -3,14 +3,14 @@
 
 from landscape import Landscape
 from population import Population
-import pandas as pd
+import pandas as pd, json, sys
 
 class GlobalParams():
     """
     General parameters for the run of simulations
     """
     map_size = 40
-    timesteps = 500
+    timesteps = 400
 
     # EPISTEMIC PARAMETERS
     desert = 2 #below which value is a patch considered desert (used for initial placement)
@@ -28,18 +28,18 @@ class GlobalParams():
     octaves = 4
 
     # AGENTS
-    agent_number = 20
-    velocity = 0.2
+    agent_number = 40
+    velocity = 0.4
 
     # Examples of setting social learning thresholds:
     # See population.py for a description of what they do
-    # 2 options for distributions:
-    # social_threshold = {'alpha': 1, 'beta': 9}
+    ## 2 options for distributions:
+    social_threshold = {'alpha': 9, 'beta': 1}
     # social_threshold = {'k': 20, 'theta': 20}
-    # 1 option for constant
+    ## 1 option for constant
     # social_threshold = {'slope': 10000000}
-    # 1 option for proportion
-    social_threshold = {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1}
+    ## 1 option for proportion
+    # social_threshold = {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1}
 
     social_type = 'homogeneous' #values: homogeneous, heterogeneous
     tolerance = 0 # how much decrease in value they can handle before doing social learning. 0 = looks at social info anytime goes downhill
