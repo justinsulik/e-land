@@ -74,6 +74,7 @@ class Population():
             # As a reminder:
                 # mean of beta distribution (a,b) = a/(a+b)
                 # mean of gamma distribution (k, theta) = k*theta
+                # for more, see https://www.essycode.com/distribution-viewer/
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
                 # it's a beta distribution
                 self.agents['social_threshold'] = params.social_threshold['alpha']/(params.social_threshold['alpha']+params.social_threshold['beta'])

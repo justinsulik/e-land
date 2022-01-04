@@ -15,19 +15,19 @@ app.get('/', (req, res, next) => {
         const { spawn } = require('child_process');
         // 'browser' tells the pythons script that this is the source of the call
         // 'all' tells the simulation to report every time step
-        const pyprog = spawn('python3', ['python/sim.py', 'browser', 'all']);
+        const pyprog = spawn('python3', ['python/run_simulations.py', 'browser', 'time']);
         let python_out = '';
         // add data to string for eventual passing to the front end
         pyprog.stdout.on('data', function(data) {
             python_out += data.toString();
         });
         pyprog.stdout.on('message', function(data) {
-            console.log(data)
+            console.log(data);
         });
 
         // handle errors
         pyprog.stderr.on('data', (data) => {
-            console.log("Python error!", data.toString())
+            console.log("Python error!", data.toString());
             reject(data.toString());
         });
 
@@ -60,6 +60,5 @@ app.get('/', (req, res, next) => {
       res.end(err);
     });
 });
-
 
 app.listen(PORT, () => console.log('Application listening on port '+PORT+'!'));
