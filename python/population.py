@@ -93,6 +93,7 @@ class Population():
             else:
                 raise Exception("social_threshold type not recognised")
         elif params.social_type == 'heterogeneous':
+            # self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
                 # it's a beta distribution
                 self.agents['threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], self.agent_number)

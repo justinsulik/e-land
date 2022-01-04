@@ -36,9 +36,9 @@ if __name__ == "__main__":
          #     {'k': 1.1, 'theta': 0.5}],
          'social_threshold': [{'alpha': 1, 'beta': 9},
             {'alpha': 3, 'beta': 7},
-            #{'alpha': 5, 'beta': 5},
-            #{'alpha': 7, 'beta': 3},
-            #{'alpha': 9, 'beta': 1}
+            {'alpha': 5, 'beta': 5},
+            {'alpha': 7, 'beta': 3},
+            {'alpha': 9, 'beta': 1}
             ],
          # 'social_threshold': [{'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1},
          # {'proportion': 0.4, 'conformist_threshold': 0, 'maverick_threshold': 1},
@@ -46,11 +46,14 @@ if __name__ == "__main__":
          # {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
          #'noise': [1,6,10],
-         'tolerance': [0, 0.2],
+         'tolerance': [0, 0.2, 0.4],
          #'resilience': [0.95, 0.995, 1.0],
          #'hill_width': [3, 6],
-         #'depletion_rate': [0.1, 0.2],
-         'social_type': ['heterogeneous', 'homogeneous']
+         'depletion_rate': [0.1, 0.2],
+         'social_type': [
+            'heterogeneous',
+            #'homogeneous'
+         ]
         }
 
         # Set up filenames for storing data and sim parameters
