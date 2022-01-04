@@ -32,6 +32,7 @@ class GlobalParams():
     velocity = 0.2
 
     # Examples of setting social learning thresholds:
+    # See population.py for a description of what they do
     # 2 options for distributions:
     # social_threshold = {'alpha': 1, 'beta': 9}
     # social_threshold = {'k': 20, 'theta': 20}

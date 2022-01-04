@@ -41,10 +41,10 @@ if __name__ == "__main__":
          #    {'alpha': 7, 'beta': 3},
          #    {'alpha': 9, 'beta': 1}],
          'social_threshold': [{'proportion': 0, 'conformist_threshold': 0, 'maverick_threshold': 1},
-         # {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1},
-         # {'proportion': 0.4, 'conformist_threshold': 0, 'maverick_threshold': 1},
-         # {'proportion': 0.6, 'conformist_threshold': 0, 'maverick_threshold': 1},
-         # {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1},
+         {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1},
+         {'proportion': 0.4, 'conformist_threshold': 0, 'maverick_threshold': 1},
+         {'proportion': 0.6, 'conformist_threshold': 0, 'maverick_threshold': 1},
+         {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1},
          {'proportion': 1, 'conformist_threshold': 0, 'maverick_threshold': 1}],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
          #'noise': [1,6,10],
@@ -91,9 +91,9 @@ if __name__ == "__main__":
         # get combinations of above keys (params) and values (possible settings of params)
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
         # Either aim to get roughly 200 runs per cell
-        #R = 200*len(run_list)
-        # OR just set number of runs manually, e.g. for testing
-        R = 1
+        R = 400*len(run_list)
+        # OR just set number of runs manually, e.g. for testing, by uncommenting and updating the following
+        # R = 1
         # Sample randomly from the list of runs
         tasks = [(GlobalParams, random.choice(run_list), i, detail, data_file, agents_file) for i in range(R)]
 

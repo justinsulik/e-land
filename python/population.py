@@ -85,11 +85,11 @@ class Population():
                 # constant value, everyone gets the same (there's no heterogeneous version of this)
                 self.agents['threshold'] = params.social_threshold['slope']
             elif 'proportion' in params.social_threshold:
-                # 'proportion' refers to proportion of conformists (p) vs. mavericks (1-p)
+                # 'proportion' refers to proportion of mavericks (p) vs. conformists (1-p)
                 # (see heterogeneous version below).
-                # However, for 'homogemeous' version of proportion, obviously cant have conformists vs. mavericks
+                # However, for 'homogemeous' version of proportion, obviously cant have these distinct categories
                 # so instead, get weighted mean of the given thresholds: p*conformists + (1-p)*mavericks
-                self.agents['threshold'] = params.social_threshold['proportion']*params.social_threshold['conformist_threshold'] + (1-params.social_threshold['proportion'])*params.social_threshold['maverick_threshold']
+                self.agents['threshold'] = params.social_threshold['proportion']*params.social_threshold['maverick_threshold'] + (1-params.social_threshold['proportion'])*params.social_threshold['conformist_threshold']
             else:
                 raise Exception("social_threshold type not recognised")
         elif params.social_type == 'heterogeneous':
@@ -100,9 +100,9 @@ class Population():
                 # it's a gamma distribution
                 self.agents['threshold'] = np.random.gamma(params.social_threshold['k'], params.social_threshold['theta'], self.agent_number)
             elif 'proportion' in params.social_threshold and 'conformist_threshold' in params.social_threshold and 'maverick_threshold' in params.social_threshold:
-                # 'proportion' refers to proportion of conformists (p) vs. mavericks (1-p)
-                conformists_count = int(self.agent_number*params.social_threshold['proportion'])
-                mavericks_count = self.agent_number - conformists_count
+                # 'proportion' refers to proportion of mavericks (p) vs. conformists (1-p)
+                mavericks_count = int(self.agent_number*params.social_threshold['proportion'])
+                conformists_count = self.agent_number - mavericks_count
                 social_thresholds = conformists_count*[params.social_threshold['conformist_threshold']] + mavericks_count*[params.social_threshold['maverick_threshold']]
                 self.agents['threshold'] = social_thresholds
             else:
