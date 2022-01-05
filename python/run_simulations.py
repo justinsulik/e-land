@@ -49,11 +49,11 @@ if __name__ == "__main__":
          'tolerance': [0, 0.2, 0.4],
          #'resilience': [0.95, 0.995, 1.0],
          #'hill_width': [3, 6],
-         'depletion_rate': [0.1, 0.2],
+         # 'depletion_rate': [0.1, 0.2],
          'social_type': [
             'heterogeneous',
             #'homogeneous'
-         ]
+         ],
         }
 
         # Set up filenames for storing data and sim parameters
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         # get combinations of above keys (params) and values (possible settings of params)
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
         # Either aim to get roughly 200 runs per cell
-        R = 200*len(run_list)
+        R = 100*len(run_list)
         # OR just set number of runs manually, e.g. for testing, by uncommenting and updating the following
         # R = 1
         # Sample randomly from the list of runs
