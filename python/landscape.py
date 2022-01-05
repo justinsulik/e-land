@@ -9,11 +9,10 @@ class Landscape():
 
     def __init__(self,params):
         """
-        Required params: x_size,y_size,depletion,hills,hill_width,noise,smoothing
+        Required params: x_size,y_size,hills,hill_width,noise,smoothing
         """
         self.x_size = params.map_size
         self.y_size = params.map_size
-        self.depletion = params.depletion
         self.sig_threshold = params.sig_threshold
 
         # GRID

@@ -15,7 +15,7 @@ class GlobalParams():
     # EPISTEMIC PARAMETERS
     desert = 2 #below which value is a patch considered desert (used for initial placement)
     sig_threshold = 0 #below which value a patch isn't worth excavating (used for evaluating epistemic work)
-    depletion = 0.1
+    depletion_rate = 0.2
 
     # HILLS
     hill_number = 2
@@ -29,7 +29,7 @@ class GlobalParams():
 
     # AGENTS
     agent_number = 40
-    velocity = 0.4
+    velocity = 0.2
 
     # Examples of setting social learning thresholds:
     # See population.py for a description of what they do
@@ -81,7 +81,7 @@ class Simulation():
             self.population.explore()
             self.population.move()
             self.population.updatePatches()
-            self.population.consume(self.params.depletion)
+            self.population.consume(self.params.depletion_rate)
             self.population.updateHeight()
 
         self.report('message', "Python: sim done...")

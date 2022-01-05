@@ -58,7 +58,8 @@ class Population():
         # set other params to given vals
         self.agents['velocity'] = params.velocity
         self.agents['resilience'] = params.resilience
-        self.agents['tolerance'] = params.tolerance
+        #self.agents['tolerance'] = params.tolerance
+        self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
 
         # for tracking *unique* patches visited by each agent (uniqueness handled by type "set")
         self.patches_visited = defaultdict(set)
@@ -92,6 +93,7 @@ class Population():
                 self.agents['threshold'] = params.social_threshold['proportion']*params.social_threshold['maverick_threshold'] + (1-params.social_threshold['proportion'])*params.social_threshold['conformist_threshold']
             else:
                 raise Exception("social_threshold type not recognised")
+
         elif params.social_type == 'heterogeneous':
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
                 # it's a beta distribution
@@ -187,11 +189,11 @@ class Population():
     def consume(self, depletion_rate):
         for agent in self.agents:
             significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
-            if significance >= depletion_rate:
+            if significance >= depletion_rate + self.landscape.sig_threshold:
                 new_significance = significance - depletion_rate
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
-            elif 0 < significance < depletion_rate:
-                self.landscape.setSig(agent['x_patch'], agent['y_patch'], 0)
+            else:
+                self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
             agent['consumed'] += significance
 
     def updateHeight(self):

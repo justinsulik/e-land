@@ -38,21 +38,26 @@ if __name__ == "__main__":
             {'alpha': 3, 'beta': 7},
             {'alpha': 5, 'beta': 5},
             {'alpha': 7, 'beta': 3},
-            {'alpha': 9, 'beta': 1}
-            ],
-         # 'social_threshold': [{'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1},
-         # {'proportion': 0.4, 'conformist_threshold': 0, 'maverick_threshold': 1},
-         # {'proportion': 0.6, 'conformist_threshold': 0, 'maverick_threshold': 1},
-         # {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}],
+            {'alpha': 9, 'beta': 1},
+            # ],
+         # 'social_threshold': [
+         {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1},
+         {'proportion': 0.4, 'conformist_threshold': 0, 'maverick_threshold': 1},
+         {'proportion': 0.6, 'conformist_threshold': 0, 'maverick_threshold': 1},
+         {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}
+         ],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
-         #'noise': [1,6,10],
+         'noise': [1,6,10],
          'tolerance': [0, 0.2, 0.4],
+         'velocity': [0.2, 0.4],
+         'map_size': [40, 50, 60],
+         'agent_number': [20, 40],
          #'resilience': [0.95, 0.995, 1.0],
-         #'hill_width': [3, 6],
-         # 'depletion_rate': [0.1, 0.2],
+         'hill_width': [3, 6],
+         # 'depletion_rate': [0.1, 0.2, 0.3],
          'social_type': [
             'heterogeneous',
-            #'homogeneous'
+            'homogeneous'
          ],
         }
 
