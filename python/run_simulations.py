@@ -47,10 +47,10 @@ if __name__ == "__main__":
          {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}
          ],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
-         'noise': [1,6,10],
-         'tolerance': [0, 0.2, 0.4],
+         'noise': [3,6],
+         'tolerance': [0, 0.2],
          'velocity': [0.2, 0.4],
-         'map_size': [40, 50, 60],
+         'map_size': [40, 50],
          'agent_number': [20, 40],
          #'resilience': [0.95, 0.995, 1.0],
          'hill_width': [3, 6],

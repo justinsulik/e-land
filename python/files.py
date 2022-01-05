@@ -1,5 +1,6 @@
 # Functions for handling data files
 # It assumes data files are stored in `../data`
+import os, re
 
 def fileSuffix(sim_type):
     # If this is a test run, save data to "data_temp.csv".
