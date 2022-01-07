@@ -20,6 +20,8 @@ key_dict = {'id': 0,
     'resilience': 14,
     'highest_point': 15}
 
+# todo def setSocialLearningThreshold():
+
 class Population():
 
     def __init__(self, landscape, params):
@@ -67,6 +69,7 @@ class Population():
         self.patches_visited = defaultdict(set)
 
         # SET SOCIAL LEARNING THRESHOLDS
+        # todo: move this to own function
         # The social learning thresholds can be set as:
             # distributions (beta, gamma)
             # constants
@@ -170,26 +173,19 @@ class Population():
                 patch = (self.agents[i]['x_patch'], self.agents[i]['y_patch'])
                 self.patches_visited[i].add(patch)
 
-    def wrap(self,coord,limit):
-        """
-        Wrap agent position around edge of map
-        Since modulo handles integers, separate these out from decimals
-        """
-        coord_integer = np.floor(coord)
-        coord_decimal = coord%coord_integer if coord_integer != 0 else coord
-        coord_sign = 1 if coord > 0 else -1
-        coord_new = coord_integer%limit + coord_sign*coord_decimal
-        return(coord_new)
-
     def move(self):
         # before moving, track that this was the previous patch
         self.storePreviousPatch()
         # move all agents
-        for agent in self.agents:
-            agent['x'] += np.cos(agent['heading'])*agent['velocity']
-            agent['y'] += np.sin(agent['heading'])*agent['velocity']
-            agent['x'] = self.wrap(agent['x'],self.landscape.x_size)
-            agent['y'] = self.wrap(agent['y'],self.landscape.y_size)
+        self.agents['x'] += np.cos(self.agents['heading'])*self.agents['velocity']
+        self.agents['x'] = self.agents['x']%self.landscape.x_size
+
+        self.agents['y'] += np.sin(self.agents['heading'])*self.agents['velocity']
+        self.agents['y'] = self.agents['y']%self.landscape.y_size
+
+
+    def evaluate():
+        pass
 
     def consume(self, depletion_rate):
         for agent in self.agents:

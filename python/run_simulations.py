@@ -54,7 +54,7 @@ if __name__ == "__main__":
          # 'agent_number': [20, 40],
          #'resilience': [0.95, 0.995, 1.0],
          # 'hill_width': [3, 6],
-         'depletion_rate': [0.1, 0.2],
+         # 'depletion_rate': [0.1, 0.2],
          'noise': [6, 8],
          'social_type': [
             'heterogeneous',
