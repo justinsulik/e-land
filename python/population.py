@@ -162,6 +162,7 @@ class Population():
         # Reflect current position
         self.agents['x_patch'] = np.floor(self.agents['x'])
         self.agents['y_patch'] = np.floor(self.agents['y'])
+        # self.agents['previous_height'] =
 
         # Track if patch is new
         same_patch = np.logical_and(self.agents['x_patch'] == self.agents['previous_x_patch'], self.agents['y_patch'] == self.agents['previous_y_patch'])
@@ -176,6 +177,7 @@ class Population():
     def move(self):
         # before moving, track that this was the previous patch
         self.storePreviousPatch()
+
         # move all agents
         self.agents['x'] += np.cos(self.agents['heading'])*self.agents['velocity']
         self.agents['y'] += np.sin(self.agents['heading'])*self.agents['velocity']
@@ -184,9 +186,10 @@ class Population():
         self.agents['x'] = self.agents['x']%self.landscape.x_size
         self.agents['y'] = self.agents['y']%self.landscape.y_size
 
-
-    def evaluate(self):
+    def decide(self):
+        # has the agent gone uphill or downhill?
         pass
+        # agents['change'] = agents[]
         #self.updateNewPatches()
 
     def consume(self, depletion_rate):
@@ -200,11 +203,12 @@ class Population():
             agent['consumed'] += significance
 
     def updateHeight(self):
-        for agent in self.agents:
-            agent_height = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
-            agent['previous_height'] = agent_height
-            if agent_height > agent['highest_point']:
-                agent['highest_point'] = agent_height
+        self.agents['previous_height'] = self.landscape.getSig(self.agents['x_patch'], self.agents['y_patch'])
+        self.agents['highest_point'] = np.where(
+            self.agents['previous_height']>self.agents['highest_point'],
+            self.agents['previous_height'],
+            self.agents['highest_point']
+        )
 
     def checkSocialLearning(self, i):
         # Find out the amounts that could be learned (height/distance, i.e. as slopes) from all other agents

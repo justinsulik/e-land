@@ -10,7 +10,7 @@ class GlobalParams():
     General parameters for the run of simulations
     """
     map_size = 40
-    timesteps = 400
+    timesteps = 200
 
     # EPISTEMIC PARAMETERS
     desert = 2 #below which value is a patch considered desert (used for initial placement)
@@ -79,7 +79,8 @@ class Simulation():
             self.updateData(timestep)
 
             self.population.move()
-            self.population.evaluate()
+            self.population.decide()
+
             self.population.explore()
             self.population.updateNewPatches()
 
