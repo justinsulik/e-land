@@ -158,7 +158,7 @@ class Population():
         self.agents['previous_x_patch'] = self.agents['x_patch']
         self.agents['previous_y_patch'] = self.agents['y_patch']
 
-    def updatePatches(self):
+    def updateNewPatches(self):
         # Reflect current position
         self.agents['x_patch'] = np.floor(self.agents['x'])
         self.agents['y_patch'] = np.floor(self.agents['y'])
@@ -178,14 +178,16 @@ class Population():
         self.storePreviousPatch()
         # move all agents
         self.agents['x'] += np.cos(self.agents['heading'])*self.agents['velocity']
-        self.agents['x'] = self.agents['x']%self.landscape.x_size
-
         self.agents['y'] += np.sin(self.agents['heading'])*self.agents['velocity']
+
+        # wrap around
+        self.agents['x'] = self.agents['x']%self.landscape.x_size
         self.agents['y'] = self.agents['y']%self.landscape.y_size
 
 
-    def evaluate():
+    def evaluate(self):
         pass
+        #self.updateNewPatches()
 
     def consume(self, depletion_rate):
         for agent in self.agents:
