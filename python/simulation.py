@@ -10,7 +10,7 @@ class GlobalParams():
     General parameters for the run of simulations
     """
     map_size = 40
-    timesteps = 400
+    timesteps = 500
 
     # EPISTEMIC PARAMETERS
     desert = 2 #below which value is a patch considered desert (used for initial placement)
@@ -34,7 +34,7 @@ class GlobalParams():
     # Examples of setting social learning thresholds:
     # See population.py for a description of what they do
     ## 2 options for distributions:
-    social_threshold = {'alpha': 1, 'beta': 9}
+    social_threshold = {'alpha': 9, 'beta': 1}
     # social_threshold = {'k': 20, 'theta': 20}
     ## 1 option for constant
     # social_threshold = {'slope': 10000000}
@@ -79,13 +79,8 @@ class Simulation():
             self.updateData(timestep)
 
             self.population.move()
-            # self.population.decide()
-
-            self.population.explore()
-            self.population.updateNewPatch()
-
-            self.population.consume(self.params.depletion_rate)
-            self.population.updateHeight()
+            self.population.decide()
+            self.population.work(self.params.depletion_rate)
 
         self.report('message', "Python: sim done...")
 

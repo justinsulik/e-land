@@ -164,7 +164,7 @@ class Population():
         # Reflect current position
         self.agents['x_patch'] = np.floor(self.agents['x'])
         self.agents['y_patch'] = np.floor(self.agents['y'])
-        self.updateHeight();
+        self.agents['height'] = self.landscape.getSig(self.agents['x_patch'], self.agents['y_patch'])
 
         # Track if patch is new
         same_patch = np.logical_and(self.agents['x_patch'] == self.agents['previous_x_patch'], self.agents['y_patch'] == self.agents['previous_y_patch'])
@@ -174,49 +174,34 @@ class Population():
                 patch = (self.agents[i]['x_patch'], self.agents[i]['y_patch'])
                 self.patches_visited[i].add(patch)
 
-    def move(self):
-        # before moving, track info from the previous patch
-        self.storePreviousPatch()
-
-        # move all agents
-        self.agents['x'] += np.cos(self.agents['heading']) * self.agents['velocity']
-        self.agents['y'] += np.sin(self.agents['heading']) * self.agents['velocity']
-
-        # wrap around
-        self.agents['x'] = np.round(self.agents['x'], 4) % self.landscape.x_size
-        self.agents['y'] = np.round(self.agents['y'], 4) % self.landscape.y_size
-        if np.any(self.agents['x']>=self.landscape.x_size):
-            print('move x', self.agents['x'])
-        if np.any(self.agents['y']>=self.landscape.y_size):
-            print('move y',  self.agents['y'])
-
-        # Update with new info
-        self.updateNewPatch()
-
-    def decide(self):
-        # has each agent gone uphill or downhill?
-        downhill = self.agents['height'] - self
-        # agents['change'] = agents[]
-        #self.updateNewPatches()
-
-    def consume(self, depletion_rate):
-        for agent in self.agents:
-            if agent['x_patch'] >= 40 or agent['y_patch'] >= 40:
-                print('consume', agent['x_patch'], agent['y_patch'])
-                print('consume', agent['x'], agent['y'])
-            significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
-            if significance >= depletion_rate + self.landscape.sig_threshold:
-                new_significance = significance -  depletion_rate
-                self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
-            agent['consumed'] += significance
-
-    def updateHeight(self):
-        self.agents['height'] = self.landscape.getSig(self.agents['x_patch'], self.agents['y_patch'])
+        # Track if patch represents a new personal best
         self.agents['highest_point'] = np.where(
             self.agents['previous_height']>self.agents['highest_point'],
             self.agents['previous_height'],
             self.agents['highest_point']
         )
+
+    def move(self):
+        # Before moving, track info from the previous patch
+        self.storePreviousPatch()
+        # Move all agents
+        self.agents['x'] += np.cos(self.agents['heading']) * self.agents['velocity']
+        self.agents['y'] += np.sin(self.agents['heading']) * self.agents['velocity']
+        # Wrap around
+        self.agents['x'] = np.round(self.agents['x'], 4) % self.landscape.x_size
+        self.agents['y'] = np.round(self.agents['y'], 4) % self.landscape.y_size
+        # After moving, update info from current patch
+        self.updateNewPatch()
+
+    def work(self, depletion_rate):
+        for agent in self.agents:
+            # get the height each time, otherwise agents with higher indexes will have out-of-date info
+            height = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
+            if height >= depletion_rate + self.landscape.sig_threshold:
+                self.landscape.setSig(agent['x_patch'], agent['y_patch'], height - depletion_rate)
+            elif height > self.landscape.sig_threshold:
+                self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
+            agent['consumed'] += height
 
     def checkSocialLearning(self, i):
         # Find out the amounts that could be learned (height/distance, i.e. as slopes) from all other agents
@@ -237,11 +222,11 @@ class Population():
 
         # Rule out anyone not worth following
         too_close = np.logical_and(self.agents['x'] == agent['x'],self.agents['y'] == agent['y'])
-        below_significance = self.agents['previous_height'] < self.landscape.sig_threshold
+        below_significance = self.agents['height'] <= self.landscape.sig_threshold
         dont_follow = np.logical_or(too_close, below_significance)
 
         # Calculate how high others were at the end of the previous time step
-        othersHeights = np.where(dont_follow,np.nan,self.agents['previous_height'])
+        othersHeights = np.where(dont_follow,np.nan,self.agents['height'])
         # Difference in height from focal agent
         heightDeltas = othersHeights - self.landscape.getSig(agent['x_patch'],agent['y_patch'])
 
@@ -263,12 +248,12 @@ class Population():
         else:
             return False
 
-    def explore(self):
-        # Do general exploration, and check progress (uphill vs. too far downhill)
+    def decide(self):
+        # Keep on same heading or look around?
         # If too far downhill, make a decision about learning strategy
         for i, agent in enumerate(self.agents):
             intolerable_decrease = self.goneTooFarDown(i)
-            agent = self.agents[i]
+            #agent = self.agents[i]
             if intolerable_decrease:
                 # Lower the agent's resilience because of failure to climb
                 agent['threshold'] = round(agent['threshold'] * agent['resilience'], 3)
