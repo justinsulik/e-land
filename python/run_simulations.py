@@ -34,13 +34,13 @@ if __name__ == "__main__":
          #     {'k': 1, 'theta': 0.2},
          #     {'k': 1, 'theta': 0.35},
          #     {'k': 1.1, 'theta': 0.5}],
-         # 'social_threshold': [
-         #    {'alpha': 1, 'beta': 9},
-         #    {'alpha': 3, 'beta': 7},
-         #    {'alpha': 5, 'beta': 5},
-         #    {'alpha': 7, 'beta': 3},
-         #    {'alpha': 9, 'beta': 1},
-         #    ],
+         'social_threshold': [
+            {'alpha': 1, 'beta': 9},
+            {'alpha': 3, 'beta': 7},
+            {'alpha': 5, 'beta': 5},
+            {'alpha': 7, 'beta': 3},
+            {'alpha': 9, 'beta': 1},
+            ],
          # 'social_threshold': [
          # {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1},
          # {'proportion': 0.4, 'conformist_threshold': 0, 'maverick_threshold': 1},
@@ -48,18 +48,18 @@ if __name__ == "__main__":
          # {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}
          # ],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
-         # 'tolerance': [0, 0.2, 0.4],
+         'tolerance': [0, 0.2, 0.4],
          # 'velocity': [0.2, 0.4],
          # 'map_size': [40, 50],
          # 'agent_number': [20, 40],
-         #'resilience': [0.95, 0.995, 1.0],
+         # 'resilience': [0.95, 0.995, 1.0],
          # 'hill_width': [3, 6],
          # 'depletion_rate': [0.1, 0.2],
          # 'noise': [6, 8],
-         # 'social_type': [
-         #    'heterogeneous',
-         #    'homogeneous'
-         # ],
+         'social_type': [
+            'heterogeneous',
+            'homogeneous'
+         ],
         }
 
         # Set up filenames for storing data and sim parameters
@@ -98,9 +98,9 @@ if __name__ == "__main__":
         # get combinations of above keys (params) and values (possible settings of params)
         run_list = [dict(zip(keys, combination)) for combination in itertools.product(*values)]
         # Either aim to get roughly 200 runs per cell
-        # R = 200*len(run_list)
+        R = 200*len(run_list)
         # OR just set number of runs manually, e.g. for testing, by uncommenting and updating the following
-        R = 1
+        # R = 1
         # Sample randomly from the list of runs
         tasks = [(GlobalParams, random.choice(run_list), i, detail, data_file, agents_file) for i in range(R)]
 

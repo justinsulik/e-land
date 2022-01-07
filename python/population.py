@@ -198,8 +198,6 @@ class Population():
             if significance >= depletion_rate + self.landscape.sig_threshold:
                 new_significance = significance -  depletion_rate
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
-            #else:
-            #    self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
             agent['consumed'] += significance
 
     def updateHeight(self):
