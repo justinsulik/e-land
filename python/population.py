@@ -100,6 +100,7 @@ class Population():
                 raise Exception("social_threshold type not recognised")
 
         elif params.social_type == 'heterogeneous':
+            self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
                 # it's a beta distribution
                 self.agents['threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], self.agent_number)
@@ -157,23 +158,17 @@ class Population():
         # Update to reflect their previous patch
         self.agents['previous_x_patch'] = self.agents['x_patch']
         self.agents['previous_y_patch'] = self.agents['y_patch']
-        # self.agents['previous_height'] = self.agents['height']
+        self.agents['previous_height'] = self.agents['height']
 
     def updateNewPatch(self):
         # Reflect current position
         self.agents['x_patch'] = np.floor(self.agents['x'])
         self.agents['y_patch'] = np.floor(self.agents['y'])
-        # self.agents['previous_height'] =
-        if np.any(self.agents['x_patch']==40):
-            print("updateNewPatch", self.agents['x'])
-        if np.any(self.agents['y_patch']==40):
-            print("updateNewPatch", self.agents['y'])
+        self.updateHeight();
 
         # Track if patch is new
         same_patch = np.logical_and(self.agents['x_patch'] == self.agents['previous_x_patch'], self.agents['y_patch'] == self.agents['previous_y_patch'])
-
         # If so, add it to set of patches visited by agents
-        # I wish I knew how to do this without a for-loop
         for i, same in enumerate(same_patch):
             if not same:
                 patch = (self.agents[i]['x_patch'], self.agents[i]['y_patch'])
@@ -195,8 +190,8 @@ class Population():
         if np.any(self.agents['y']>=self.landscape.y_size):
             print('move y',  self.agents['y'])
 
-        # update with new patch
-        # self.updateNewPatch()
+        # Update with new info
+        self.updateNewPatch()
 
     def decide(self):
         # has each agent gone uphill or downhill?
@@ -216,7 +211,7 @@ class Population():
             agent['consumed'] += significance
 
     def updateHeight(self):
-        self.agents['previous_height'] = self.landscape.getSig(self.agents['x_patch'], self.agents['y_patch'])
+        self.agents['height'] = self.landscape.getSig(self.agents['x_patch'], self.agents['y_patch'])
         self.agents['highest_point'] = np.where(
             self.agents['previous_height']>self.agents['highest_point'],
             self.agents['previous_height'],

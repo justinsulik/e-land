@@ -37,9 +37,9 @@ if __name__ == "__main__":
          'social_threshold': [
             {'alpha': 1, 'beta': 9},
             {'alpha': 3, 'beta': 7},
-            {'alpha': 5, 'beta': 5},
-            {'alpha': 7, 'beta': 3},
-            {'alpha': 9, 'beta': 1},
+            # {'alpha': 5, 'beta': 5},
+            # {'alpha': 7, 'beta': 3},
+            # {'alpha': 9, 'beta': 1},
             ],
          # 'social_threshold': [
          # {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1},

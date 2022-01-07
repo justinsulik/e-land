@@ -103,7 +103,7 @@ class Simulation():
                 # Report agents' outcomes from previous timestep
                 self.agent_data = self.population.reportSuccess()
 
-    def getData(self, sim_number, details='time'):
+    def collectData(self, sim_number, details='time'):
         # Include whatever variables have changed in this specific run in the run's data,
         if details in ['time', 'basic']:
             data_out = pd.DataFrame.from_dict(self.group_data, orient="index").round(2)
@@ -139,10 +139,10 @@ def singleRun(inputs):
     simulation = Simulation(glob, loc, 'silent', detail)
     simulation.run()
     # We'll always need data on the overall/group outcomes
-    group_data = simulation.getData(i)
+    group_data = simulation.collectData(i)
     group_data.to_csv(data_file, mode="a", header=False, index=False)
     # If necessary, also provide data on individual agents
     if detail == 'agents':
-        agent_data = simulation.getData(i, 'agents')
+        agent_data = simulation.collectData(i, 'agents')
         agent_data.to_csv(agents_file, mode="a", header=False, index=False)
     return("done")
