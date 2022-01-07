@@ -76,6 +76,8 @@ class Simulation():
 
         for timestep in range(self.params.timesteps):
             # This is the stuff that gets done at each timestep
+            self.updateData(timestep)
+
             self.population.move()
             self.population.evaluate()
             self.population.explore()
@@ -83,8 +85,6 @@ class Simulation():
 
             self.population.consume(self.params.depletion_rate)
             self.population.updateHeight()
-
-            self.updateData(timestep)
 
         self.report('message', "Python: sim done...")
 
