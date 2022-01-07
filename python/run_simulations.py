@@ -34,7 +34,8 @@ if __name__ == "__main__":
          #     {'k': 1, 'theta': 0.2},
          #     {'k': 1, 'theta': 0.35},
          #     {'k': 1.1, 'theta': 0.5}],
-         'social_threshold': [{'alpha': 1, 'beta': 9},
+         'social_threshold': [
+            {'alpha': 1, 'beta': 9},
             {'alpha': 3, 'beta': 7},
             {'alpha': 5, 'beta': 5},
             {'alpha': 7, 'beta': 3},
@@ -47,15 +48,14 @@ if __name__ == "__main__":
          # {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}
          # ],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
-         # 'noise': [3,6],
          'tolerance': [0, 0.2, 0.4],
          # 'velocity': [0.2, 0.4],
          # 'map_size': [40, 50],
          # 'agent_number': [20, 40],
          #'resilience': [0.95, 0.995, 1.0],
          # 'hill_width': [3, 6],
-         # 'depletion_rate': [0.1, 0.2, 0.3],
-         'noise': [3, 8],
+         'depletion_rate': [0.1, 0.2],
+         'noise': [6, 8],
          'social_type': [
             'heterogeneous',
             'homogeneous'

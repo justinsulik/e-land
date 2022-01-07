@@ -79,7 +79,7 @@ class Simulation():
             self.updateData(timestep)
             self.population.move()
             self.population.explore()
-            self.population.updatePatches()
+            # self.population.updatePatches()
             self.population.consume(self.params.depletion_rate)
             self.population.updateHeight()
 
