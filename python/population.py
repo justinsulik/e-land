@@ -157,12 +157,17 @@ class Population():
         # Update to reflect their previous patch
         self.agents['previous_x_patch'] = self.agents['x_patch']
         self.agents['previous_y_patch'] = self.agents['y_patch']
+        # self.agents['previous_height'] = self.agents['height']
 
-    def updateNewPatches(self):
+    def updateNewPatch(self):
         # Reflect current position
         self.agents['x_patch'] = np.floor(self.agents['x'])
         self.agents['y_patch'] = np.floor(self.agents['y'])
         # self.agents['previous_height'] =
+        if np.any(self.agents['x_patch']==40):
+            print("updateNewPatch", self.agents['x'])
+        if np.any(self.agents['y_patch']==40):
+            print("updateNewPatch", self.agents['y'])
 
         # Track if patch is new
         same_patch = np.logical_and(self.agents['x_patch'] == self.agents['previous_x_patch'], self.agents['y_patch'] == self.agents['previous_y_patch'])
@@ -175,25 +180,35 @@ class Population():
                 self.patches_visited[i].add(patch)
 
     def move(self):
-        # before moving, track that this was the previous patch
+        # before moving, track info from the previous patch
         self.storePreviousPatch()
 
         # move all agents
-        self.agents['x'] += np.cos(self.agents['heading'])*self.agents['velocity']
-        self.agents['y'] += np.sin(self.agents['heading'])*self.agents['velocity']
+        self.agents['x'] += np.cos(self.agents['heading']) * self.agents['velocity']
+        self.agents['y'] += np.sin(self.agents['heading']) * self.agents['velocity']
 
         # wrap around
-        self.agents['x'] = self.agents['x']%self.landscape.x_size
-        self.agents['y'] = self.agents['y']%self.landscape.y_size
+        self.agents['x'] = np.round(self.agents['x'], 4) % self.landscape.x_size
+        self.agents['y'] = np.round(self.agents['y'], 4) % self.landscape.y_size
+        if np.any(self.agents['x']>=self.landscape.x_size):
+            print('move x', self.agents['x'])
+        if np.any(self.agents['y']>=self.landscape.y_size):
+            print('move y',  self.agents['y'])
+
+        # update with new patch
+        # self.updateNewPatch()
 
     def decide(self):
-        # has the agent gone uphill or downhill?
-        pass
+        # has each agent gone uphill or downhill?
+        downhill = self.agents['height'] - self
         # agents['change'] = agents[]
         #self.updateNewPatches()
 
     def consume(self, depletion_rate):
         for agent in self.agents:
+            if agent['x_patch'] >= 40 or agent['y_patch'] >= 40:
+                print('consume', agent['x_patch'], agent['y_patch'])
+                print('consume', agent['x'], agent['y'])
             significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
             if significance >= depletion_rate + self.landscape.sig_threshold:
                 new_significance = significance -  depletion_rate
@@ -210,28 +225,34 @@ class Population():
 
     def checkSocialLearning(self, i):
         # Find out the amounts that could be learned (height/distance, i.e. as slopes) from all other agents
-        # Find out where focal agent is
+
+        # First, find out where focal agent is
         agent = self.agents[i]
         agentX = agent['x']
         agentY = agent['y']
-        # Calculate distance to all agents (in 2 directions, given that the landscape wraps around)
+
+        # Calculate distance to all agents
+        # (bearing in mind that the shortest distance could be over the wraparound)
         distX1 = self.agents['x']-agentX
         distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
         distY1 = self.agents['y']-agentY
         distY2 = self.landscape.y_size - distY1 #WRAPPED DISTANCE
         distX = np.minimum(distX2,distX1)
         distY = np.minimum(distY2,distY1)
+
+        # Rule out anyone not worth following
+        too_close = np.logical_and(self.agents['x'] == agent['x'],self.agents['y'] == agent['y'])
+        below_significance = self.agents['previous_height'] < self.landscape.sig_threshold
+        dont_follow = np.logical_or(too_close, below_significance)
+
         # Calculate how high others were at the end of the previous time step
-        othersHeights = self.agents['previous_height']
-        # Don't follow anyone who is below the significance threshold: they have no epistemic value to offer!
-        othersHeights[othersHeights < self.landscape.sig_threshold] = np.nan
-        # Compare your own elevation to the height of others
+        othersHeights = np.where(dont_follow,np.nan,self.agents['previous_height'])
+        # Difference in height from focal agent
         heightDeltas = othersHeights - self.landscape.getSig(agent['x_patch'],agent['y_patch'])
-        distX[i] = np.nan # agents can't follow themselves
-        distY[i] = np.nan # agents can't follow themselves
 
         # Calculate distance
         distances = np.sqrt(distX**2 + distY**2)
+        # Calculate value as change in height / distance
         inclines = heightDeltas / distances
         return(inclines)
 
@@ -271,7 +292,7 @@ class Population():
                     # If yes, identify best candidate to follow
                     # (choose randomly if tie)
                     maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
-                    self.setHeadingToPatch(i, maxAgent['x_patch'],maxAgent['y_patch'])
+                    self.setHeading(i, maxAgent['x_patch'],maxAgent['y_patch'])
                     agent['status'] = 1 # social learning
                 else:
                     self.exploreLocalArea(i)
@@ -293,7 +314,7 @@ class Population():
         if len(geqMoores) > 0:
             # If any neighboring patch is higher, select a random higher patch to check
             chosenPatch = np.random.choice(geqMoores)
-            self.setHeadingToPatch(i,chosenPatch['x'],chosenPatch['y'])
+            self.setHeading(i,chosenPatch['x'],chosenPatch['y'])
             agent['status'] = 4 # exploring-local
         else:
             # If no patches are higher, pick a completely random direction
@@ -301,7 +322,7 @@ class Population():
             agent['status'] = 3 # completely lost
 
 
-    def setHeadingToPatch(self,i,xTarg,yTarg):
+    def setHeading(self,i,xTarg,yTarg):
         """
         Sets agent's heading towards the target position
         Takes fastest route, i.e. takes wrapping into account
