@@ -34,7 +34,7 @@ class GlobalParams():
     # Examples of setting social learning thresholds:
     # See population.py for a description of what they do
     ## 2 options for distributions:
-    social_threshold = {'alpha': 9, 'beta': 1}
+    social_threshold = {'alpha': 1, 'beta': 9}
     # social_threshold = {'k': 20, 'theta': 20}
     ## 1 option for constant
     # social_threshold = {'slope': 10000000}
@@ -77,9 +77,8 @@ class Simulation():
         for timestep in range(self.params.timesteps):
             # This is the stuff that gets done at each timestep
             self.updateData(timestep)
-            self.population.findPatches()
-            self.population.explore()
             self.population.move()
+            self.population.explore()
             self.population.updatePatches()
             self.population.consume(self.params.depletion_rate)
             self.population.updateHeight()
@@ -97,6 +96,7 @@ class Simulation():
                     'mass': self.landscape.epistemicMassDiscovered()}
                 self.group_data[timestep] = step_data
             if self.reportagents and timestep==self.params.timesteps-1:
+                # Report agents' outcomes from previous timestep
                 self.agent_data = self.population.reportSuccess()
 
     def getData(self, sim_number, details='time'):

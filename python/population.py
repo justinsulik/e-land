@@ -43,6 +43,7 @@ class Population():
                                                   ('resilience', 'f4'),
                                                   ('highest_point', 'f4'),
                                                   ('consumed', 'f4'),
+                                                  #todo('depletion_rate', 'f4'),
                                                   ('starting_x', 'i4'), ('starting_y', 'i4')])
         # INITIALIZE AGENTS
         # assign index id
@@ -58,8 +59,9 @@ class Population():
         # set other params to given vals
         self.agents['velocity'] = params.velocity
         self.agents['resilience'] = params.resilience
-        #self.agents['tolerance'] = params.tolerance
-        self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
+        self.agents['tolerance'] = params.tolerance
+        # todo: self.agents['depletion_rate'] = params.depletion_rate
+        #self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
 
         # for tracking *unique* patches visited by each agent (uniqueness handled by type "set")
         self.patches_visited = defaultdict(set)
@@ -148,7 +150,7 @@ class Population():
             data[id]['patches_visited'] = len(self.patches_visited[id])
         return(data)
 
-    def findPatches(self):
+    def storePreviousPatch(self):
         # Update to reflect their previous patch
         self.agents['previous_x_patch'] = self.agents['x_patch']
         self.agents['previous_y_patch'] = self.agents['y_patch']
@@ -180,6 +182,9 @@ class Population():
         return(coord_new)
 
     def move(self):
+        # before moving, track that this was the previous patch
+        self.storePreviousPatch()
+        # move all agents
         for agent in self.agents:
             agent['x'] += np.cos(agent['heading'])*agent['velocity']
             agent['y'] += np.sin(agent['heading'])*agent['velocity']
@@ -190,10 +195,10 @@ class Population():
         for agent in self.agents:
             significance = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
             if significance >= depletion_rate + self.landscape.sig_threshold:
-                new_significance = significance - depletion_rate
+                new_significance = significance -  depletion_rate
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], new_significance)
-            else:
-                self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
+            #else:
+            #    self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
             agent['consumed'] += significance
 
     def updateHeight(self):
@@ -235,7 +240,8 @@ class Population():
         # And if downhill, if it's too far downhill to be acceptable given the agents tolerance value
         agent = self.agents[i]
         current_height = self.landscape.getSig(agent['x_patch'],agent['y_patch'])
-        # Is the agent going downhill, more than what is within their tolerance?
+        # Is the agent going downhill? Allow them to continue if random p < tolerance
+        change_in_height = agent['previous_height'] - self.landscape.getSig(agent['x_patch'],agent['y_patch'])
         if current_height < agent['previous_height'] - agent['tolerance']:
             return True
         else:
@@ -297,8 +303,8 @@ class Population():
 
     def setHeadingToPatch(self,i,xTarg,yTarg):
         """
-        sets agent's heading towards the center of a target patch
-        takes fastest route, i.e. takes wrapping into account
+        Sets agent's heading towards the target position
+        Takes fastest route, i.e. takes wrapping into account
         """
         agent = self.agents[i]
         #for both x and y, there are three cases to consider: actual value x/yTarg and its projections on both sides
