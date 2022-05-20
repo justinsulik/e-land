@@ -26,6 +26,7 @@ app.get('/', (req, res, next) => {
 
 app.post('/runsim', (req, res, next) => {
   var params = req.body;
+  console.log("Node: python starting...");
   runsim.run_py(params).then((data) => {
       console.log('Node: python script success!');
       res.send(JSON.stringify(data)).end();

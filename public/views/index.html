@@ -58,7 +58,8 @@ var runSim = function(){
   fetch('runsim', call_params)
     .then(function(response) {
         return response.json();
-    }).then(function(data) {
+    }).then(function(sim_data) {
+        data = sim_data
         setup_svg();
         start_animation(data, animation_speed);
     }).catch(function(err) {

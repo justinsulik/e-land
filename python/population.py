@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np, strategies
 from collections import defaultdict
 
 # Since the agent info is passed to the js script as a dict, but is handled as a structured array in the numpy matrices here,
@@ -60,65 +60,18 @@ class Population():
         self.agents['consumed'] = 0
         # Set status to explore
         self.agents['status'] = 0
-        # set other params to given vals
-        self.agents['velocity'] = params.velocity
-        self.agents['resilience'] = params.resilience
-        self.agents['tolerance'] = params.tolerance
-        self.agents['anticonformity'] = params.anticonformity
-        # todo: self.agents['depletion_rate'] = params.depletion_rate
 
         # for tracking *unique* patches visited by each agent (uniqueness handled by type "set")
         self.patches_visited = defaultdict(set)
 
-        # SET SOCIAL LEARNING THRESHOLDS
-        # todo: move this to own function
-        # The social learning thresholds can be set as:
-            # distributions (beta, gamma)
-            # constants
-            # proportions
-        # if population is homogeneous, everyone gets the same value (e.g., the mean of the distribution)
-        # if population is heterogeneous, everyone gets different valuers (e.g., random sample from the distribution)
-        if params.social_type == 'homogeneous':
-            # As a reminder:
-                # mean of beta distribution (a,b) = a/(a+b)
-                # mean of gamma distribution (k, theta) = k*theta
-                # for more, see https://www.essycode.com/distribution-viewer/
-            if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
-                # it's a beta distribution
-                self.agents['threshold'] = params.social_threshold['alpha']/(params.social_threshold['alpha']+params.social_threshold['beta'])
-            elif 'k' in params.social_threshold and 'theta' in params.social_threshold:
-                # it's a gamma distribution
-                self.agents['threshold'] = params.social_threshold['k']*params.social_threshold['theta']
-            elif 'slope' in params.social_threshold:
-                # constant value, everyone gets the same (there's no heterogeneous version of this)
-                self.agents['threshold'] = params.social_threshold['slope']
-            elif 'proportion' in params.social_threshold:
-                # 'proportion' refers to proportion of mavericks (p) vs. conformists (1-p)
-                # (see heterogeneous version below).
-                # However, for 'homogemeous' version of proportion, obviously cant have these distinct categories
-                # so instead, get weighted mean of the given thresholds: p*conformists + (1-p)*mavericks
-                self.agents['threshold'] = params.social_threshold['proportion']*params.social_threshold['maverick_threshold'] + (1-params.social_threshold['proportion'])*params.social_threshold['conformist_threshold']
-            else:
-                raise Exception("social_threshold type not recognised")
+        # Set the params that can potentially vary
+        self.agents['velocity'] = params.velocity
+        self.agents['threshold'] = strategies.set_thresholds(params)
+        self.agents['anticonformity'] = strategies.set_anticonformity(params)
+        self.agents['resilience'] = strategies.set_resilience(params)
+        self.agents['tolerance'] = strategies.set_tolerance(params)
+        # todo: self.agents['depletion_rate'] = params.depletion_rate
 
-        elif params.social_type == 'heterogeneous':
-            #self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
-            if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
-                # it's a beta distribution
-                self.agents['threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], self.agent_number)
-            elif 'k' in params.social_threshold and 'theta' in params.social_threshold:
-                # it's a gamma distribution
-                self.agents['threshold'] = np.random.gamma(params.social_threshold['k'], params.social_threshold['theta'], self.agent_number)
-            elif 'proportion' in params.social_threshold and 'conformist_threshold' in params.social_threshold and 'maverick_threshold' in params.social_threshold:
-                # 'proportion' refers to proportion of mavericks (p) vs. conformists (1-p)
-                mavericks_count = int(self.agent_number*params.social_threshold['proportion'])
-                conformists_count = self.agent_number - mavericks_count
-                social_thresholds = conformists_count*[params.social_threshold['conformist_threshold']] + mavericks_count*[params.social_threshold['maverick_threshold']]
-                self.agents['threshold'] = social_thresholds
-            else:
-                raise Exception("social_threshold type not recognised")
-        else:
-            raise Exception("social_type not recognised")
 
         #PLACE ALL AGENTS IN THE DESERT
         for agent in self.agents:
@@ -260,7 +213,6 @@ class Population():
         # If too far downhill, make a decision about learning strategy
         for i, agent in enumerate(self.agents):
             intolerable_decrease = self.goneTooFarDown(i)
-            #agent = self.agents[i]
             if intolerable_decrease:
                 # Lower the agent's resilience because of failure to climb
                 agent['threshold'] = round(agent['threshold'] * agent['resilience'], 3)
@@ -284,8 +236,8 @@ class Population():
                 else:
                     self.exploreLocalArea(i)
             else:
+                # Keep going
                 agent['status'] = 0
-
 
     def exploreLocalArea(self, i):
         # Since there is no suitable agent to follow:
