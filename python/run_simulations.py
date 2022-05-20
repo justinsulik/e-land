@@ -23,7 +23,8 @@ if __name__ == "__main__":
 
     # Set up sim runs depending whether this is called from Node app or with python3 at command line
     if sim_type == "browser":
-        simulation = Simulation(GlobalParams, {}, sim_type, detail)
+        browser_params = json.loads(sys.argv[3])
+        simulation = Simulation(GlobalParams, browser_params, sim_type, detail)
         simulation.run()
     else:
         if sim_type == 'test':

@@ -150,6 +150,7 @@ class Population():
         return(agents)
 
     def reportSuccess(self):
+        # nothing calls this?!?!
         keys = ['id', 'highest_point', 'threshold', 'consumed']
         data = {x['id']: {key: x[key] for key in keys} for x in self.agents[keys]}
         for id in self.patches_visited:

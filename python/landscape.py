@@ -26,7 +26,7 @@ class Landscape():
                      ('height', np.float64),
                      ('visited', np.int8)])
 
-        # COORDINATES
+        # COORDINATES and other info associated with each patch
         self.grid['x'] = np.indices(self.grid.shape)[0]
         self.grid['y'] = np.indices(self.grid.shape)[1]
 
@@ -61,9 +61,9 @@ class Landscape():
         """
         Format grid data as {x,y,z} dictionary for plotting
         """
-        # Stupidly, the 3d_d3 library in the visualization script takes y to be height, so switch z and y
+        # Annoyingly, the 3d_d3 library in the visualization script takes y to be height, so switch z and y
         # Also, make center of grid (0,0) by offsetting half of map size
-        return([{'x': point[0]-self.x_size/2, 'z': point[1]-self.y_size/2, 'y': point[2]} for point in self.grid.flatten().tolist()])
+        return([{'x': point[0]-self.x_size/2, 'z': point[1]-self.y_size/2, 'y': point[2], 'visited': point[3]} for point in self.grid.flatten().tolist()])
 
     def getSig(self,x,y):
         """

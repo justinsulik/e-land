@@ -61,6 +61,10 @@ class Simulation():
         # (all times and all agents seems overkill for now...)
         self.reportsteps = detail == 'time'
         self.reportagents = detail == 'agents'
+
+        if sim_type == "browser":
+            self.report("message", run_params)
+
         for param_name in run_params:
             # Keep track of which parameters are specific to this run
             self.changed.append(param_name)
@@ -78,7 +82,6 @@ class Simulation():
         for timestep in range(self.params.timesteps):
             # This is the stuff that gets done at each timestep
             self.updateData(timestep)
-
             self.population.move()
             self.population.decide()
             self.population.work(self.params.depletion_rate)
@@ -86,7 +89,7 @@ class Simulation():
         self.report('message', "Python: sim done...")
 
     def updateData(self, timestep):
-        #either 'print' the data for the node app to see or store it for later saving
+        #either 'print' the data so that the node app can see it, or store it for later saving
         if self.sim_type == 'browser':
             self.report("data", json.dumps({'landscape': self.landscape.reportGrid(), 'population': self.population.trackAgents()}))
         else:

@@ -14,7 +14,8 @@ function cycle(data, iteration){
     if(iteration==0){
       var yMin = d3.min(points, function(d){ return d.y; });
       var yMax = d3.max(points, function(d){ return d.y; });
-      color.domain([yMin, yMax]);
+      altitude_color.domain([yMin, yMax]);
+      visited_color.domain([0, agents.length]);
     }
 
     // process landscape and agent data

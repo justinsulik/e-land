@@ -19,6 +19,7 @@ app.get('/', (req, res, next) => {
     .catch((err)=>{
       res.end(err);
     });
+    
 });
 
 app.listen(PORT, () => console.log('Application listening on port '+PORT+'!'));

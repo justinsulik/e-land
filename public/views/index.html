@@ -10,7 +10,7 @@
 
 svg {
     width: 1040px;
-    height: 1040px;
+    height: 800px;
     margin-left: 50px;
     margin-top: 50px;
 }
@@ -18,6 +18,9 @@ svg {
 
 <svg></svg>
 
+<div>
+  <button id="restart" onclick="restartSim()">Restart simulation</button>
+</div>
 <div>
   <p><b>Color mapping</b></p>
   <input type="radio" id="altitude" name="color_map" value="altitude" checked>
@@ -30,6 +33,21 @@ svg {
 
 <script>
 var data = <%- data %>
+
+var restartSim = function(){
+  // still not much happening here
+  var radio_buttons = document.querySelectorAll('input[name="color_map"]');
+  var selected_mapping;
+  for(const radio_button of radio_buttons){
+    if(radio_button.checked){
+      selected_mapping = radio_button.value;
+      break;
+    }
+  }
+  console.log(selected_mapping)
+}
+
 </script>
+
 <script src="libs/epistemic_landscape.js"></script>
 <script src="libs/display_data.js"></script>

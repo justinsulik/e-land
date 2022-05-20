@@ -36,7 +36,8 @@ var point3d = d3._3d()
    .rotateY(startAngleY)
    .rotateX(startAngleX);
 
-var color = d3.scaleLinear();
+var altitude_color = d3.scaleLinear();
+var visited_color = d3.scaleLinear();
 
 // Updating landscape/agents at each time step
 
@@ -73,10 +74,19 @@ function processAgents(data){
 }
 
 // Coloring
-
 function color_landscape(d){
-  var _y = (d[0].y + d[1].y + d[2].y + d[3].y)/4;
-  return d.ccw ? d3.interpolateViridis(color(_y)) : d3.color(d3.interpolateViridis(color(_y))).darker(2.5);
+  return color_landscape_visited(d)
+}
+
+function color_landscape_altitude(d){
+  // var _y = (d[0].y + d[1].y + d[2].y + d[3].y)/4;
+  var _y = d3.max([d[0].y + d[1].y + d[2].y + d[3].y]);
+  return d3.interpolateViridis(altitude_color(_y));
+}
+
+function color_landscape_visited(d){
+  var _y = d[0].visited;
+  return d3.interpolateViridis(visited_color(_y))
 }
 
 function color_agent(status){
@@ -104,6 +114,7 @@ function color_agent(status){
   }
 }
 
+// Interactivity
 
 function dragStart(){
     mx = d3.event.x;
@@ -115,8 +126,8 @@ function dragged(){
     mouseY = mouseY || 0;
     beta   = (d3.event.x - mx + mouseX) * Math.PI / 230 ;
     alpha  = (d3.event.y - my + mouseY) * Math.PI / 230  * (-1);
-    processLandscape(surface.rotateY(beta + startAngle).rotateX(alpha + 3*startAngle)(points), 0);
-    processAgents(point3d.rotateY(beta + startAngle).rotateX(alpha + 3*startAngle)(agents), 0);
+    processLandscape(surface.rotateY(beta + startAngleY).rotateX(alpha + 3*startAngleX)(points), 0);
+    processAgents(point3d.rotateY(beta + startAngleY).rotateX(alpha + 3*startAngleX)(agents), 0);
 }
 
 function dragEnd(){
