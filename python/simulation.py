@@ -34,7 +34,7 @@ class GlobalParams():
     # Examples of setting social learning thresholds:
     # See population.py for a description of what they do
     ## 2 options for distributions:
-    social_threshold = {'alpha': 9, 'beta': 1}
+    social_threshold = {'alpha': 1, 'beta': 9}
     # social_threshold = {'k': 20, 'theta': 20}
     ## 1 option for constant
     # social_threshold = {'slope': 10000000}
