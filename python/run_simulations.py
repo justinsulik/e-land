@@ -4,11 +4,13 @@ import files
 from tqdm import tqdm
 
 if __name__ == "__main__":
+
     try:
         # when called from the node app, the first arg is 'browser'
         sim_type = sys.argv[1]
     except:
         sim_type = 'test'
+
     try:
         # 3 levels of detail in reporting are available
         # 'time': all time steps (no agents):
@@ -48,11 +50,11 @@ if __name__ == "__main__":
          # {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}
          # ],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
-         'tolerance': [0, 0.2, 0.4],
+         'tolerance': [0, 0.1, 0.2, 0.3],
          # 'velocity': [0.2, 0.4],
          # 'map_size': [40, 50],
          # 'agent_number': [20, 40],
-         'resilience': [0.99, 1.0],
+         # 'resilience': [0.99, 1.0],
          # 'hill_width': [3, 6],
          # 'depletion_rate': [0.1, 0.2],
          # 'noise': [6, 8],

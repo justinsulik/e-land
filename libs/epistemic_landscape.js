@@ -7,6 +7,8 @@ var hover_offset = 0.1;
 var startAngleY = Math.PI/4; // for overhead view: 0
 var startAngleX = 3*Math.PI/4; //for overhead view: Math.PI/2
 var zoom = 15;
+
+// Set up landscape
 var svg = d3.select('svg')
   .call(d3.drag().on('drag', dragged)
   .on('start', dragStart)
@@ -36,26 +38,24 @@ var point3d = d3._3d()
 
 var color = d3.scaleLinear();
 
-function processLandscape(data, tt){
+// Updating landscape/agents at each time step
+
+function processLandscape(data){
     var planes = svg.selectAll('path').data(data, function(d){ return d.plane; });
     planes
         .enter()
         .append('path')
         .attr('class', '_3d')
-        .attr('fill', colorize)
-        .attr('opacity', 0)
         .attr('stroke-opacity', 0.1)
-        .merge(planes)
         .attr('stroke', 'black')
-        .transition().duration(tt)
         .attr('opacity', 1)
-        .attr('fill', colorize)
+        .attr('fill', color_landscape)
         .attr('d', surface.draw);
     planes.exit().remove();
     d3.selectAll('._3d').sort(surface.sort);
 }
 
-function processAgents(data, tt){
+function processAgents(data){
     var circles = svg.selectAll('circle').data(data);
     circles
         .enter()
@@ -66,39 +66,44 @@ function processAgents(data, tt){
         .attr('cy', function(d){return(d.projected.y);})
         .attr('r', 4)
         .attr('stroke', function(d){ return "black"; })
-        .attr('fill', function(d){
-          switch(d.status){
-            case 0:
-              // exploring-straight line
-              return "red";
-              break;
-            case 1:
-              // social learning
-              return "black";
-              break;
-            case 2:
-              // leader
-              return "white";
-              break;
-            case 3:
-              // completely lost
-              return "hotpink";
-              break;
-            case 4:
-              // exploring-local
-              return "indianred";
-              break;
-          }
-        })
+        .attr('fill', function(d){return color_agent(d.status)})
         .attr('opacity', 1);
     circles.exit().remove();
     d3.selectAll('._3d').sort(point3d.sort);
 }
 
-function colorize(d){
-    var _y = (d[0].y + d[1].y + d[2].y + d[3].y)/4;
-    return d.ccw ? d3.interpolateViridis(color(_y)) : d3.color(d3.interpolateViridis(color(_y))).darker(2.5);
+// Coloring
+
+function color_landscape(d){
+  var _y = (d[0].y + d[1].y + d[2].y + d[3].y)/4;
+  return d.ccw ? d3.interpolateViridis(color(_y)) : d3.color(d3.interpolateViridis(color(_y))).darker(2.5);
 }
+
+function color_agent(status){
+  switch(status){
+    case 0:
+      // exploring-straight line
+      return "red";
+      break;
+    case 1:
+      // social learning
+      return "black";
+      break;
+    case 2:
+      // leader
+      return "white";
+      break;
+    case 3:
+      // completely lost
+      return "hotpink";
+      break;
+    case 4:
+      // exploring-local
+      return "indianred";
+      break;
+  }
+}
+
 
 function dragStart(){
     mx = d3.event.x;
@@ -117,35 +122,4 @@ function dragged(){
 function dragEnd(){
     mouseX = d3.event.x - mx + mouseX;
     mouseY = d3.event.y - my + mouseY;
-}
-
-function init(data, iteration){
-    // clear old
-    svg.selectAll('circle').remove();
-    svg.selectAll('path').remove();
-    // filter data for this iteration
-    points = data[iteration].landscape;
-    agents = data[iteration].population;
-    // set color for first iteration
-    if(iteration==0){
-      var yMin = d3.min(points, function(d){ return d.y; });
-      var yMax = d3.max(points, function(d){ return d.y; });
-      color.domain([yMin, yMax]);
-    }
-
-    // display data
-    processLandscape(surface(points), 0);
-    // todo: necessary to double up on code like this? cf. above poitns
-
-    processAgents(point3d(agents), 1000);
-}
-
-function change(data){
-    var iteration = 0;
-    d3.interval(function(){
-      init(data, iteration);
-      if(iteration<data.length-1){
-        iteration += 1;
-      }
-    }, 50);
 }

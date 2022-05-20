@@ -18,7 +18,8 @@ key_dict = {'id': 0,
     'status': 12,
     'tolerance': 13,
     'resilience': 14,
-    'highest_point': 15}
+    'highest_point': 15,
+    'anticonformity': 16}
 
 # todo def setSocialLearningThreshold():
 
@@ -44,6 +45,7 @@ class Population():
                                                   ('tolerance', 'i4'),
                                                   ('resilience', 'f4'),
                                                   ('highest_point', 'f4'),
+                                                  ('anticonformity', 'f4'),
                                                   ('consumed', 'f4'),
                                                   #todo('depletion_rate', 'f4'),
                                                   ('starting_x', 'i4'), ('starting_y', 'i4')])
@@ -62,8 +64,8 @@ class Population():
         self.agents['velocity'] = params.velocity
         self.agents['resilience'] = params.resilience
         self.agents['tolerance'] = params.tolerance
+        self.agents['anticonformity'] = params.anticonformity
         # todo: self.agents['depletion_rate'] = params.depletion_rate
-        #self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
 
         # for tracking *unique* patches visited by each agent (uniqueness handled by type "set")
         self.patches_visited = defaultdict(set)
@@ -100,7 +102,7 @@ class Population():
                 raise Exception("social_threshold type not recognised")
 
         elif params.social_type == 'heterogeneous':
-            self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
+            #self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
             if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
                 # it's a beta distribution
                 self.agents['threshold'] = np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], self.agent_number)
@@ -202,6 +204,8 @@ class Population():
             elif height > self.landscape.sig_threshold:
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
             agent['consumed'] += height
+            # track that this patch has been exploited
+            self.landscape.incrementVisit(agent['x_patch'], agent['y_patch'])
 
     def checkSocialLearning(self, i):
         # Find out the amounts that could be learned (height/distance, i.e. as slopes) from all other agents

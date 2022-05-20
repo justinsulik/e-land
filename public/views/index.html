@@ -7,11 +7,7 @@
 <script src="libs/d3-3d.js"></script>
 <body>
 <style type="text/css">
-button {
-    position: absolute;
-    right: 10px;
-    top: 10px;
-}
+
 svg {
     width: 1040px;
     height: 1040px;
@@ -19,8 +15,16 @@ svg {
     margin-top: 50px;
 }
 </style>
-<button>update</button>
+
 <svg></svg>
+
+<div>
+  <p><b>Color mapping</b></p>
+  <input type="radio" id="altitude" name="color_map" value="altitude" checked>
+  <label for="altitude">Altitude</label>
+  <input type="radio" id="visits" name="color_map" value="visits">
+  <label for="visits">Unique visits</label>
+</div>
 
 </body>
 

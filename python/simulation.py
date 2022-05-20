@@ -10,7 +10,7 @@ class GlobalParams():
     General parameters for the run of simulations
     """
     map_size = 40
-    timesteps = 500
+    timesteps = 100
 
     # EPISTEMIC PARAMETERS
     desert = 2 #below which value is a patch considered desert (used for initial placement)
@@ -44,6 +44,7 @@ class GlobalParams():
     social_type = 'homogeneous' #values: homogeneous, heterogeneous
     tolerance = 0 # how much decrease in value they can handle before doing social learning. 0 = looks at social info anytime goes downhill
     resilience = 1 # rate at which their social threshold decreases if they aren't climbing. 1 = stays constant (the effect is multiplicative)
+    anticonformity = 0 # higher values means agents will avoid popular patches
 
 class Simulation():
     """
@@ -134,7 +135,7 @@ def singleRun(inputs):
     simulation = Simulation(glob, loc, 'silent', detail)
     simulation.run()
     # We'll always need data on the overall/group outcomes
-    group_data = simulation.collectData(i)
+    group_data = simulation.collectData(i, detail)
     group_data.to_csv(data_file, mode="a", header=False, index=False)
     # If necessary, also provide data on individual agents
     if detail == 'agents':

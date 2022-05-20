@@ -48,6 +48,9 @@ class Landscape():
         # NOISE
         self.addPerlin(params.noise, params.smoothing, params.octaves)
 
+        # UNDISCOVERED PATCHES
+        self.grid['visited'] = 0
+
         # LANDSCAPE GLOBAL PROPERTIES
         # epistemic mass: total amount of epistemic value at start of simulation
         self.total_epistemic_mass = self.epistemicMass()
@@ -78,12 +81,11 @@ class Landscape():
     def incrementHeight(self,x,y,amount):
         self.grid[x,y]['height'] += amount
 
-    def incVisit(self,x,y):
+    def incrementVisit(self,x,y):
         """
         INPUT: coordinate
         """
-        self.grid[x,y]['visited'] = 1  #if value is 1, the patch has been visited
-        # Nothing calls this yet
+        self.grid[x,y]['visited'] += 1  #if value is 1, the patch has been visited
 
     def getPatch(self,x,y):
         """
