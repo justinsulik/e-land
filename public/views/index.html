@@ -23,9 +23,9 @@ svg {
 </div>
 <div>
   <p><b>Color mapping</b></p>
-  <input type="radio" id="altitude" name="color_map" value="altitude" checked>
+  <input type="radio" id="altitude" name="color_map" value="altitude" onclick="handle_color(this);" checked>
   <label for="altitude">Altitude</label>
-  <input type="radio" id="visits" name="color_map" value="visits">
+  <input type="radio" id="visits" name="color_map" value="visits" onclick="handle_color(this);" >
   <label for="visits">Unique visits</label>
 </div>
 
@@ -33,6 +33,7 @@ svg {
 
 <script>
 var data = <%- data %>
+var color_map = 'altitude';
 
 var restartSim = function(){
   // still not much happening here
@@ -45,6 +46,11 @@ var restartSim = function(){
     }
   }
   console.log(selected_mapping)
+}
+
+var handle_color = function(radio){
+  color_map = radio.value
+  console.log(color_map)
 }
 
 </script>

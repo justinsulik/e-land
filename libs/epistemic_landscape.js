@@ -75,7 +75,11 @@ function processAgents(data){
 
 // Coloring
 function color_landscape(d){
-  return color_landscape_visited(d)
+  if(color_map=="altitude"){
+    return color_landscape_altitude(d);
+  } else {
+    return color_landscape_visited(d);
+  }
 }
 
 function color_landscape_altitude(d){
@@ -85,7 +89,7 @@ function color_landscape_altitude(d){
 }
 
 function color_landscape_visited(d){
-  var _y = d[0].visited;
+  var _y = d[1].visited;
   return d3.interpolateViridis(visited_color(_y))
 }
 

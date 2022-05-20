@@ -175,7 +175,10 @@ class Population():
         for i, same in enumerate(same_patch):
             if not same:
                 patch = (self.agents[i]['x_patch'], self.agents[i]['y_patch'])
+                # track which patches this agent has visited
                 self.patches_visited[i].add(patch)
+                # track which agents have visited each patch
+                self.landscape.incrementVisit(patch, i)
 
         # Track if patch represents a new personal best
         self.agents['highest_point'] = np.where(
@@ -205,8 +208,7 @@ class Population():
             elif height > self.landscape.sig_threshold:
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
             agent['consumed'] += height
-            # track that this patch has been exploited
-            self.landscape.incrementVisit(agent['x_patch'], agent['y_patch'])
+
 
     def checkSocialLearning(self, i):
         # Find out the amounts that could be learned (height/distance, i.e. as slopes) from all other agents

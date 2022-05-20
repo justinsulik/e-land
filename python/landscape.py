@@ -1,6 +1,7 @@
 from perlin import PerlinNoiseFactory
 import numpy as np
 from scipy.stats import multivariate_normal
+from collections import defaultdict
 
 class Landscape():
     """
@@ -26,7 +27,7 @@ class Landscape():
                      ('height', np.float64),
                      ('visited', np.int8)])
 
-        # COORDINATES and other info associated with each patch
+        # COORDINATES
         self.grid['x'] = np.indices(self.grid.shape)[0]
         self.grid['y'] = np.indices(self.grid.shape)[1]
 
@@ -48,7 +49,8 @@ class Landscape():
         # NOISE
         self.addPerlin(params.noise, params.smoothing, params.octaves)
 
-        # UNDISCOVERED PATCHES
+        # TRACKING VISITS TO EACH PATCH
+        self.patches_visited = defaultdict(set)
         self.grid['visited'] = 0
 
         # LANDSCAPE GLOBAL PROPERTIES
@@ -81,11 +83,13 @@ class Landscape():
     def incrementHeight(self,x,y,amount):
         self.grid[x,y]['height'] += amount
 
-    def incrementVisit(self,x,y):
+    def incrementVisit(self,patch,id):
         """
-        INPUT: coordinate
+        INPUT: coordinate x y, agent id
         """
-        self.grid[x,y]['visited'] += 1  #if value is 1, the patch has been visited
+        # track that this patch has been exploited
+        self.patches_visited[patch].add(id)
+        self.grid[patch[0],patch[1]]['visited'] = len(self.patches_visited[patch])
 
     def getPatch(self,x,y):
         """

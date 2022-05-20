@@ -10,7 +10,7 @@ class GlobalParams():
     General parameters for the run of simulations
     """
     map_size = 40
-    timesteps = 100
+    timesteps = 400
 
     # EPISTEMIC PARAMETERS
     desert = 2 #below which value is a patch considered desert (used for initial placement)
