@@ -25,12 +25,10 @@ function cycle(data, iteration){
 
 function start_animation(data, animation_speed){
     var iteration = 0;
-    d3.interval(function(){
+    interval = d3.interval(function(){
       cycle(data, iteration);
       if(iteration<data.length-1){
         iteration += 1;
       }
     }, animation_speed);
 }
-
-start_animation(data, animation_speed)

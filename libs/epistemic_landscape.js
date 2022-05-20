@@ -9,11 +9,14 @@ var startAngleX = 3*Math.PI/4; //for overhead view: Math.PI/2
 var zoom = 15;
 
 // Set up landscape
-var svg = d3.select('svg')
-  .call(d3.drag().on('drag', dragged)
-  .on('start', dragStart)
-  .on('end', dragEnd))
-  .append('g');
+
+var setup_svg = function(){
+  svg = d3.select('svg')
+    .call(d3.drag().on('drag', dragged)
+    .on('start', dragStart)
+    .on('end', dragEnd))
+    .append('g');
+}
 
 var points, mx, my, mouseX, mouseY, agents;
 

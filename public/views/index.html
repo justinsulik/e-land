@@ -16,10 +16,11 @@ svg {
 }
 </style>
 
-<svg></svg>
+<svg id="landscape_svg"></svg>
 
 <div>
   <button id="restart" onclick="restartSim()">Restart simulation</button>
+  <button id="run" onclick="runSim()">Run new simulation</button>
 </div>
 <div>
   <p><b>Color mapping</b></p>
@@ -34,24 +35,58 @@ svg {
 <script>
 var data = <%- data %>
 var color_map = 'altitude';
+var svg;
+var interval;
+
+var clear_svg = function(){
+  svg.selectAll("*").remove();
+  interval.stop()
+}
 
 var restartSim = function(){
-  // still not much happening here
-  var radio_buttons = document.querySelectorAll('input[name="color_map"]');
-  var selected_mapping;
-  for(const radio_button of radio_buttons){
-    if(radio_button.checked){
-      selected_mapping = radio_button.value;
-      break;
-    }
-  }
-  console.log(selected_mapping)
+  clear_svg();
+  setup_svg();
+  start_animation(data, animation_speed)
+}
+
+var runSim = function(){
+  clear_svg();
+  var sim_params = {agent_number: 2};
+  var call_params = {method: "POST",
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(sim_params)}
+  fetch('runsim', call_params)
+    .then(function(response) {
+        return response.json();
+    }).then(function(data) {
+        setup_svg();
+        start_animation(data, animation_speed);
+    }).catch(function(err) {
+        console.log("Opps, Something went wrong!", err);
+    })
+  // setup_svg();
+  // start_animation(data, animation_speed)
 }
 
 var handle_color = function(radio){
   color_map = radio.value
-  console.log(color_map)
 }
+
+window.onload = function(){
+  setup_svg();
+  start_animation(data, animation_speed);
+}
+
+// still not much happening here
+// var radio_buttons = document.querySelectorAll('input[name="color_map"]');
+// var selected_mapping;
+// for(const radio_button of radio_buttons){
+//   if(radio_button.checked){
+//     selected_mapping = radio_button.value;
+//     break;
+//   }
+// }
+// console.log(selected_mapping)
 
 </script>
 
