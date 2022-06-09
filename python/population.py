@@ -210,8 +210,8 @@ class Population():
         anticonformity = agent['anticonformity']
         # How much would they devalue popular patches?
         # assuming alpha + beta = 10 for beta.cdf
-        anticonf_alpha = 9-8*anticonformity
-        anticonf_beta = 10-anticonf_alpha
+        anticonf_beta = 10*anticonformity
+        anticonf_alpha = 10-anticonf_beta
         popularity = self.agents['patch_popularity']/len(self.agents)
         adjustment = beta.cdf(popularity, anticonf_alpha, anticonf_beta)
         # Difference in height from focal agent

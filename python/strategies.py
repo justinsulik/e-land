@@ -33,7 +33,6 @@ def set_thresholds(params):
             raise Exception("social_threshold type not recognised")
 
     elif params.social_threshold_type == 'heterogeneous':
-        #self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
         if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
             # it's a beta distribution
             return np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], params.agent_number)
@@ -65,9 +64,17 @@ def set_velocity(params):
 
 def set_anticonformity(params):
     if params.anticonformity_type == 'homogeneous':
-        return params.anticonformity
+        if 'alpha' in params.anticonformity and 'beta' in params.anticonformity:
+            # it's a beta distribution
+            return params.anticonformity['alpha']/(params.anticonformity['alpha']+params.anticonformity['beta'])
+        else:
+            raise Exception("Other forms of anticonformity not yet implemented!")
     else:
-        raise Exception("Variable anticonformity not yet implemented!")
+        if 'alpha' in params.anticonformity and 'beta' in params.anticonformity:
+            # it's a beta distribution
+            return np.random.beta(params.anticonformity['alpha'], params.anticonformity['beta'], params.agent_number)
+        else:
+            raise Exception("Other forms of anticonformity not yet implemented!")
 
 def set_resilience(params):
     if params.resilience_type == 'homogeneous':

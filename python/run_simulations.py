@@ -52,9 +52,16 @@ if __name__ == "__main__":
          # {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}
          # ],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
-         'tolerance': [0, 0.3],
-         'tolerance_type': ['homogeneous', 'heterogeneous'],
-         'anticonformity': [0, 1]
+         # 'tolerance': [0, 0.3],
+         # 'tolerance_type': ['homogeneous', 'heterogeneous'],
+         'anticonformity': [
+             {'alpha': 1, 'beta': 9},
+             {'alpha': 3, 'beta': 7},
+             {'alpha': 5, 'beta': 5},
+             {'alpha': 7, 'beta': 3},
+             {'alpha': 9, 'beta': 1},
+         ],
+         'anticonformity_type': ['homogeneous', 'heterogeneous'],
          # 'velocity': [0.2, 0.4],
          # 'map_size': [40, 50],
          # 'agent_number': [20, 40],
