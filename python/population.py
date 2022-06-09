@@ -1,5 +1,6 @@
 import numpy as np, strategies
 from collections import defaultdict
+from scipy.stats import beta
 
 # Since the agent info is passed to the js script as a dict, but is handled as a structured array in the numpy matrices here,
 # this dict maps between the agent info keys and array indices
@@ -20,7 +21,8 @@ key_dict = {'id': 0,
     'resilience': 14,
     'highest_point': 15,
     'anticonformity': 16,
-    'depletion_rate': 17}
+    'depletion_rate': 17,
+    'patch_popularity': 18}
 
 # todo def setSocialLearningThreshold():
 
@@ -48,6 +50,7 @@ class Population():
                                                   ('highest_point', 'f4'),
                                                   ('anticonformity', 'f4'),
                                                   ('depletion_rate', 'f4'),
+                                                  ('patch_popularity', 'i4'),
                                                   ('consumed', 'f4'),
                                                   ('starting_x', 'i4'), ('starting_y', 'i4')])
         # INITIALIZE AGENTS
@@ -134,6 +137,9 @@ class Population():
                 # track which agents have visited each patch
                 self.landscape.incrementVisit(patch, i)
 
+        # Store popularity of current patch
+        self.agents['patch_popularity'] = self.landscape.getVisited(self.agents['x_patch'], self.agents['y_patch'])
+
         # Track if patch represents a new personal best
         self.agents['highest_point'] = np.where(
             self.agents['previous_height']>self.agents['highest_point'],
@@ -166,6 +172,7 @@ class Population():
 
     def checkOthersValues(self, i):
         # Find out the amounts that could be learned (height/distance, i.e. as slopes) from all other agents
+        # Include adjusting this estimate according to the focal agents' biases about anticonformity
 
         # First, find out where focal agent is
         agent = self.agents[i]
@@ -180,22 +187,40 @@ class Population():
         distY2 = self.landscape.y_size - distY1 #WRAPPED DISTANCE
         distX = np.minimum(distX2,distX1)
         distY = np.minimum(distY2,distY1)
+        distances = np.sqrt(distX**2 + distY**2)
 
         # Rule out anyone not worth following
-        too_close = np.logical_and(self.agents['x'] == agent['x'],self.agents['y'] == agent['y'])
+        ## Such as those on the same patch
+        too_close = np.logical_and(self.agents['x'] == agent['x'], self.agents['y'] == agent['y'])
+        ## Or those who aren't on a patch of any significance
         below_significance = self.agents['height'] <= self.landscape.sig_threshold
         dont_follow = np.logical_or(too_close, below_significance)
 
-        # Calculate how high others were at the end of the previous time step
-        # if dont_follow, set np.nan else set height
-        othersHeights = np.where(dont_follow, np.nan, self.agents['height'])
-        # Difference in height from focal agent
-        heightDeltas = othersHeights - self.landscape.getSig(agent['x_patch'],agent['y_patch'])
-        # Calculate distance
-        distances = np.sqrt(distX**2 + distY**2)
+        # Calculate how much higher (than the focal agent) others were at the end of the previous time step,
+        # Adjusting the estimation of their heights according to focal agent's biases,
+        # IF they are not in the dont_follow set
+        heightDeltas = self.getAdjustedHeights(agent, dont_follow)
+
         # Calculate value as change in height / distance
         inclines = heightDeltas / distances
         return(inclines)
+
+    def getAdjustedHeights(self, agent, dont_follow):
+        # How anticonformist is this agent?
+        anticonformity = agent['anticonformity']
+        # How much would they devalue popular patches?
+        # assuming alpha + beta = 10 for beta.cdf
+        anticonf_alpha = 9-8*anticonformity
+        anticonf_beta = 10-anticonf_alpha
+        popularity = self.agents['patch_popularity']/len(self.agents)
+        adjustment = beta.cdf(popularity, anticonf_alpha, anticonf_beta)
+        # Difference in height from focal agent
+        others_heights = self.agents['height']*(1-adjustment)
+        height_deltas = others_heights - self.landscape.getSig(agent['x_patch'],agent['y_patch'])
+
+        #heights_deltas_adjusted = height_deltas*(1-adjustment)
+        heights_deltas_filtered = np.where(dont_follow, np.nan, height_deltas)
+        return heights_deltas_filtered
 
     def goneTooFarDown(self, i):
         # See if the agent is doing uphill or downhill.
@@ -234,6 +259,7 @@ class Population():
     def checkMaxLearnable(self, i):
         # Find out out much agent could potentially learn from others
         # (which means there must be at least one other agent)
+        # (and if there are people to learn from, who is the best candidate to follow)
         if len(self.agents) > 1:
             inclines = self.checkOthersValues(i)
             # Check if all inclines are nan (because all other agents are below the significance threshold, and thus not worth learning from)

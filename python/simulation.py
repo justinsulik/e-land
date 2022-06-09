@@ -32,7 +32,8 @@ class GlobalParams():
 
     # social threshold: how much of an improvement (as slope: climb/distance) another agent's patch has to offer to be worth visiting
     # lower value: more willing to follow others
-    social_threshold = {'alpha': 1, 'beta': 9, 'type': 'homogeneous'}
+    social_threshold = {'alpha': 1, 'beta': 9}
+    social_threshold_type = 'homogeneous'
     # can be parameterised in different ways:
     ## as gamma distribution
     # social_threshold = {'k': 20, 'theta': 20}
@@ -42,15 +43,20 @@ class GlobalParams():
     # social_threshold = {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1}
 
     # tolerance: how much decrease in value they can handle before doing social learning. 0 = looks at social info anytime goes downhill
-    tolerance = {'value': 0, 'type': 'homogeneous'}
+    tolerance = 0
+    tolerance_type = 'homogeneous'
     # resilience: rate at which their social threshold decreases if they aren't climbing. 1 = stays constant
     # (the effect is multiplicative so values much below 0.99 quickly lead to very low thresholds
-    resilience = {'value': 1, 'type': 'homogeneous'}
+    resilience = 1
+    resilience_type = 'homogeneous'
     # anticonformity: how much a patch being explored by others will disincentivize them to visit.
     # 0 = no effect of who else has visited a patch; higher value means agent will avoid popular patches
-    anticonformity = {'value': 0, 'type': 'homogeneous'}
-    velocity = {'value': 0.2, 'type': 'homogeneous'}
-    depletion_rate = {'value': 0.2, 'type': 'homogeneous'}
+    anticonformity = 0
+    anticonformity_type = 'homogeneous'
+    velocity = 0.2
+    velocity_type = 'homogeneous'
+    depletion_rate = 0.2
+    depletion_rate_type = 'homogeneous'
 
 class Simulation():
     """

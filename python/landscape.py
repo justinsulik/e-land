@@ -91,6 +91,9 @@ class Landscape():
         self.patches_visited[patch].add(id)
         self.grid[patch[0],patch[1]]['visited'] = len(self.patches_visited[patch])
 
+    def getVisited(self, x_patch, y_patch):
+        return self.grid[x_patch, y_patch]['visited']
+
     def getPatch(self,x,y):
         """
         INPUT: coordinate

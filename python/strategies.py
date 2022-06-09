@@ -9,7 +9,7 @@ def set_thresholds(params):
     # if population is homogeneous, everyone gets the same value (e.g., the mean of the distribution)
     # if population is heterogeneous, everyone gets different values (e.g., random sample from the distribution)
 
-    if params.social_threshold['type'] == 'homogeneous':
+    if params.social_threshold_type == 'homogeneous':
         # As a reminder:
             # mean of beta distribution (a,b) = a/(a+b)
             # mean of gamma distribution (k, theta) = k*theta
@@ -32,7 +32,7 @@ def set_thresholds(params):
         else:
             raise Exception("social_threshold type not recognised")
 
-    elif params.social_threshold['type'] == 'heterogeneous':
+    elif params.social_threshold_type == 'heterogeneous':
         #self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
         if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
             # it's a beta distribution
@@ -52,32 +52,31 @@ def set_thresholds(params):
         raise Exception("social_type not recognised")
 
 def set_depletion_rate(params):
-    if params.depletion_rate['type'] == 'homogeneous':
-        return params.depletion_rate['value']
+    if params.depletion_rate_type == 'homogeneous':
+        return params.depletion_rate
     else:
         raise Exception("Variable depletion rate not yet implemented!")
 
 def set_velocity(params):
-    if params.velocity['type'] == 'homogeneous':
-        return params.velocity['value']
+    if params.velocity_type == 'homogeneous':
+        return params.velocity
     else:
         raise Exception("Variable velocity not yet implemented!")
 
 def set_anticonformity(params):
-    if params.anticonformity['type'] == 'homogeneous':
-        return params.anticonformity['value']
+    if params.anticonformity_type == 'homogeneous':
+        return params.anticonformity
     else:
         raise Exception("Variable anticonformity not yet implemented!")
 
 def set_resilience(params):
-    if params.resilience['type'] == 'homogeneous':
-        return params.resilience['value']
+    if params.resilience_type == 'homogeneous':
+        return params.resilience
     else:
         raise Exception("Variable resilience not yet implemented!")
 
-
 def set_tolerance(params):
-    if params.tolerance['type'] == 'homogeneous':
-        return params.tolerance['value']
+    if params.tolerance_type == 'homogeneous':
+        return params.tolerance
     else:
-        return np.random.binomial(1, params.tolerance['value'], params.agent_number)
+        return np.random.binomial(1, params.tolerance, params.agent_number)
