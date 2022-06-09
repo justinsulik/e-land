@@ -64,14 +64,13 @@ class Population():
         # for tracking *unique* patches visited by each agent (uniqueness handled by type "set")
         self.patches_visited = defaultdict(set)
 
-        # Set the params that can potentially vary
-        self.agents['velocity'] = params.velocity
+        # Set the search strategies
+        self.agents['velocity'] = strategies.set_velocities(params)
         self.agents['threshold'] = strategies.set_thresholds(params)
         self.agents['anticonformity'] = strategies.set_anticonformity(params)
         self.agents['resilience'] = strategies.set_resilience(params)
         self.agents['tolerance'] = strategies.set_tolerance(params)
         # todo: self.agents['depletion_rate'] = params.depletion_rate
-
 
         #PLACE ALL AGENTS IN THE DESERT
         for agent in self.agents:
@@ -94,7 +93,7 @@ class Population():
         Generate list of agents with x, y, height vals
         """
         # Needed for the node app visualization
-        # the javascript library "3d-d3" uses y as height, hence switching z and y
+        # the javascript library "3d-d3" uses y as height, hence switching z and y here
         # Offset by half mapsize
         agents = [{'x': agent[key_dict['x']]-self.landscape.x_size/2,
             'z': agent[key_dict['y']]-self.landscape.y_size/2,
@@ -108,6 +107,7 @@ class Population():
         data = {x['id']: {key: x[key] for key in keys} for x in self.agents[keys]}
         for id in self.patches_visited:
             data[id]['patches_visited'] = len(self.patches_visited[id])
+            # add more here: highest point, cumulative value, distance travelled, etc.
         return(data)
 
     def storePreviousPatch(self):
@@ -264,7 +264,7 @@ class Population():
     def setHeading(self,i,xTarg,yTarg):
         """
         Sets agent's heading towards the target position
-        Takes fastest route, i.e. takes wrapping into account
+        Takes fastest route, i.e. takes toroidal wrapping of landscape into account
         """
         agent = self.agents[i]
         #for both x and y, there are three cases to consider: actual value x/yTarg and its projections on both sides

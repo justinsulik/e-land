@@ -49,6 +49,9 @@ def set_thresholds(params):
     else:
         raise Exception("social_type not recognised")
 
+def set_velocities(params):
+    return params.velocity
+
 def set_anticonformity(params):
     return params.anticonformity
 
