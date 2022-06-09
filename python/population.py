@@ -164,7 +164,7 @@ class Population():
             agent['consumed'] += height
 
 
-    def checkSocialLearning(self, i):
+    def checkOthersValues(self, i):
         # Find out the amounts that could be learned (height/distance, i.e. as slopes) from all other agents
 
         # First, find out where focal agent is
@@ -210,35 +210,44 @@ class Population():
             return False
 
     def decide(self):
-        # Keep on same heading or look around?
-        # If too far downhill, make a decision about learning strategy
+        # Decide whether to keep going/look around/follow someone
         for i, agent in enumerate(self.agents):
+            # If too far downhill, make a decision about learning strategy
             intolerable_decrease = self.goneTooFarDown(i)
             if intolerable_decrease:
-                # Lower the agent's resilience because of failure to climb
+                # Lower the agent's threshold because of failure
                 agent['threshold'] = round(agent['threshold'] * agent['resilience'], 3)
-                # Find out out much agent could learn (which means there must be at least one other agent)
-                if len(self.agents) > 1:
-                    inclines = self.checkSocialLearning(i)
-                    # Check if all inclines are nan (because all other agents are below the significance threshold, and thus not worth learning from)
-                    if np.isnan(inclines).all(0):
-                        max_learnable = -9999
-                    else:
-                        max_learnable = np.nanmax(inclines)
-                else:
-                    max_learnable = -9999
-                # Check if that amount is above threshold
+                # Find out how much the agent could potentially learn from others
+                max_learnable, best_candidate = self.checkMaxLearnable(i)
+                # Check if that amount is above agents' social learning threshold
                 if max_learnable > agent['threshold']:
-                    # If yes, identify best candidate to follow
-                    # (choose randomly if tie)
-                    maxAgent = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
-                    self.setHeading(i, maxAgent['x_patch'],maxAgent['y_patch'])
+                    # If yes, follow the best candidate
+                    self.setHeading(i, best_candidate['x_patch'], best_candidate['y_patch'])
                     agent['status'] = 1 # social learning
                 else:
+                    # Explore locally
                     self.exploreLocalArea(i)
             else:
                 # Keep going
                 agent['status'] = 0
+
+    def checkMaxLearnable(self, i):
+        # Find out out much agent could potentially learn from others
+        # (which means there must be at least one other agent)
+        if len(self.agents) > 1:
+            inclines = self.checkOthersValues(i)
+            # Check if all inclines are nan (because all other agents are below the significance threshold, and thus not worth learning from)
+            if np.isnan(inclines).all(0):
+                max_learnable = -9999
+                best_candidate = None
+            else:
+                max_learnable = np.nanmax(inclines)
+                # Find the best candidate to learn from (choose randomly if tie)
+                best_candidate = self.agents[np.random.choice(np.flatnonzero(inclines == np.nanmax(inclines)))]
+        else:
+            max_learnable = -9999
+            best_candidate = None
+        return max_learnable, best_candidate
 
     def exploreLocalArea(self, i):
         # Since there is no suitable agent to follow:
