@@ -19,7 +19,8 @@ key_dict = {'id': 0,
     'tolerance': 13,
     'resilience': 14,
     'highest_point': 15,
-    'anticonformity': 16}
+    'anticonformity': 16,
+    'depletion_rate': 17}
 
 # todo def setSocialLearningThreshold():
 
@@ -46,8 +47,8 @@ class Population():
                                                   ('resilience', 'f4'),
                                                   ('highest_point', 'f4'),
                                                   ('anticonformity', 'f4'),
+                                                  ('depletion_rate', 'f4'),
                                                   ('consumed', 'f4'),
-                                                  #todo('depletion_rate', 'f4'),
                                                   ('starting_x', 'i4'), ('starting_y', 'i4')])
         # INITIALIZE AGENTS
         # assign index id
@@ -65,12 +66,12 @@ class Population():
         self.patches_visited = defaultdict(set)
 
         # Set the search strategies
-        self.agents['velocity'] = strategies.set_velocities(params)
+        self.agents['velocity'] = strategies.set_velocity(params)
         self.agents['threshold'] = strategies.set_thresholds(params)
         self.agents['anticonformity'] = strategies.set_anticonformity(params)
         self.agents['resilience'] = strategies.set_resilience(params)
         self.agents['tolerance'] = strategies.set_tolerance(params)
-        # todo: self.agents['depletion_rate'] = params.depletion_rate
+        self.agents['depletion_rate'] = strategies.set_depletion_rate(params)
 
         #PLACE ALL AGENTS IN THE DESERT
         for agent in self.agents:
@@ -92,7 +93,7 @@ class Population():
         """
         Generate list of agents with x, y, height vals
         """
-        # Needed for the node app visualization
+        # Needed for the node app.js visualization
         # the javascript library "3d-d3" uses y as height, hence switching z and y here
         # Offset by half mapsize
         agents = [{'x': agent[key_dict['x']]-self.landscape.x_size/2,
@@ -152,12 +153,12 @@ class Population():
         # After moving, update info from current patch
         self.updateNewPatch()
 
-    def work(self, depletion_rate):
+    def work(self):
         for agent in self.agents:
             # get the height each time, otherwise agents with higher indexes will have out-of-date info
             height = self.landscape.getSig(agent['x_patch'], agent['y_patch'])
-            if height >= depletion_rate + self.landscape.sig_threshold:
-                self.landscape.setSig(agent['x_patch'], agent['y_patch'], height - depletion_rate)
+            if height >= agent['depletion_rate'] + self.landscape.sig_threshold:
+                self.landscape.setSig(agent['x_patch'], agent['y_patch'], height - agent['depletion_rate'])
             elif height > self.landscape.sig_threshold:
                 self.landscape.setSig(agent['x_patch'], agent['y_patch'], self.landscape.sig_threshold)
             agent['consumed'] += height
@@ -172,7 +173,7 @@ class Population():
         agentY = agent['y']
 
         # Calculate distance to all agents
-        # (bearing in mind that the shortest distance could be over the wraparound)
+        # (bearing in mind that the shortest distance could be over the toroidal wraparound)
         distX1 = self.agents['x']-agentX
         distX2 = self.landscape.x_size - distX1 #WRAPPED DISTANCE
         distY1 = self.agents['y']-agentY
@@ -186,10 +187,10 @@ class Population():
         dont_follow = np.logical_or(too_close, below_significance)
 
         # Calculate how high others were at the end of the previous time step
-        othersHeights = np.where(dont_follow,np.nan,self.agents['height'])
+        # if dont_follow, set np.nan else set height
+        othersHeights = np.where(dont_follow, np.nan, self.agents['height'])
         # Difference in height from focal agent
         heightDeltas = othersHeights - self.landscape.getSig(agent['x_patch'],agent['y_patch'])
-
         # Calculate distance
         distances = np.sqrt(distX**2 + distY**2)
         # Calculate value as change in height / distance

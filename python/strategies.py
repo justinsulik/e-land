@@ -1,3 +1,5 @@
+import numpy as np
+
 def set_thresholds(params):
     # SET SOCIAL LEARNING THRESHOLDS
     # The social learning thresholds can be set as:
@@ -7,7 +9,7 @@ def set_thresholds(params):
     # if population is homogeneous, everyone gets the same value (e.g., the mean of the distribution)
     # if population is heterogeneous, everyone gets different values (e.g., random sample from the distribution)
 
-    if params.social_type == 'homogeneous':
+    if params.social_threshold['type'] == 'homogeneous':
         # As a reminder:
             # mean of beta distribution (a,b) = a/(a+b)
             # mean of gamma distribution (k, theta) = k*theta
@@ -30,18 +32,18 @@ def set_thresholds(params):
         else:
             raise Exception("social_threshold type not recognised")
 
-    elif params.social_type == 'heterogeneous':
+    elif params.social_threshold['type'] == 'heterogeneous':
         #self.agents['tolerance'] = np.random.binomial(1, params.tolerance, self.agent_number)
         if 'alpha' in params.social_threshold and 'beta' in params.social_threshold:
             # it's a beta distribution
-            return np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], self.agent_number)
+            return np.random.beta(params.social_threshold['alpha'], params.social_threshold['beta'], params.agent_number)
         elif 'k' in params.social_threshold and 'theta' in params.social_threshold:
             # it's a gamma distribution
-            return np.random.gamma(params.social_threshold['k'], params.social_threshold['theta'], self.agent_number)
+            return np.random.gamma(params.social_threshold['k'], params.social_threshold['theta'], params.agent_number)
         elif 'proportion' in params.social_threshold and 'conformist_threshold' in params.social_threshold and 'maverick_threshold' in params.social_threshold:
             # 'proportion' refers to proportion of mavericks (p) vs. conformists (1-p)
-            mavericks_count = int(self.agent_number*params.social_threshold['proportion'])
-            conformists_count = self.agent_number - mavericks_count
+            mavericks_count = int(params.agent_number*params.social_threshold['proportion'])
+            conformists_count = params.agent_number - mavericks_count
             social_thresholds = conformists_count*[params.social_threshold['conformist_threshold']] + mavericks_count*[params.social_threshold['maverick_threshold']]
             return social_thresholds
         else:
@@ -49,14 +51,33 @@ def set_thresholds(params):
     else:
         raise Exception("social_type not recognised")
 
-def set_velocities(params):
-    return params.velocity
+def set_depletion_rate(params):
+    if params.depletion_rate['type'] == 'homogeneous':
+        return params.depletion_rate['value']
+    else:
+        raise Exception("Variable depletion rate not yet implemented!")
+
+def set_velocity(params):
+    if params.velocity['type'] == 'homogeneous':
+        return params.velocity['value']
+    else:
+        raise Exception("Variable velocity not yet implemented!")
 
 def set_anticonformity(params):
-    return params.anticonformity
+    if params.anticonformity['type'] == 'homogeneous':
+        return params.anticonformity['value']
+    else:
+        raise Exception("Variable anticonformity not yet implemented!")
 
 def set_resilience(params):
-    return params.resilience
+    if params.resilience['type'] == 'homogeneous':
+        return params.resilience['value']
+    else:
+        raise Exception("Variable resilience not yet implemented!")
+
 
 def set_tolerance(params):
-    return params.tolerance
+    if params.tolerance['type'] == 'homogeneous':
+        return params.tolerance['value']
+    else:
+        return np.random.binomial(1, params.tolerance['value'], params.agent_number)

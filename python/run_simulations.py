@@ -38,11 +38,16 @@ if __name__ == "__main__":
          #     {'k': 1, 'theta': 0.35},
          #     {'k': 1.1, 'theta': 0.5}],
          'social_threshold': [
-            {'alpha': 1, 'beta': 9},
-            {'alpha': 3, 'beta': 7},
-            {'alpha': 5, 'beta': 5},
-            {'alpha': 7, 'beta': 3},
-            {'alpha': 9, 'beta': 1},
+            {'alpha': 1, 'beta': 9, 'type': 'homogeneous'},
+            {'alpha': 3, 'beta': 7, 'type': 'homogeneous'},
+            {'alpha': 5, 'beta': 5, 'type': 'homogeneous'},
+            {'alpha': 7, 'beta': 3, 'type': 'homogeneous'},
+            {'alpha': 9, 'beta': 1, 'type': 'homogeneous'},
+            {'alpha': 1, 'beta': 9, 'type': 'heterogeneous'},
+            {'alpha': 3, 'beta': 7, 'type': 'heterogeneous'},
+            {'alpha': 5, 'beta': 5, 'type': 'heterogeneous'},
+            {'alpha': 7, 'beta': 3, 'type': 'heterogeneous'},
+            {'alpha': 9, 'beta': 1, 'type': 'heterogeneous'},
             ],
          # 'social_threshold': [
          # {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1},
@@ -51,7 +56,7 @@ if __name__ == "__main__":
          # {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}
          # ],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
-         'tolerance': [0, 0.1, 0.2, 0.3],
+         # 'tolerance': [0, 0.1, 0.2, 0.3],
          # 'velocity': [0.2, 0.4],
          # 'map_size': [40, 50],
          # 'agent_number': [20, 40],
@@ -59,10 +64,6 @@ if __name__ == "__main__":
          # 'hill_width': [3, 6],
          # 'depletion_rate': [0.1, 0.2],
          # 'noise': [6, 8],
-         'social_type': [
-            'heterogeneous',
-            'homogeneous'
-         ],
         }
 
         # Set up filenames for storing data and sim parameters
@@ -76,6 +77,7 @@ if __name__ == "__main__":
             all_params = {x: all_params[x] for x in all_params if '__' not in x}
             for param in sim_parameters:
                 all_params[param] = sim_parameters[param]
+            print(all_params)
             json.dump(all_params, file_out, indent=4)
 
         # to store group-level data and the params that vary across sims

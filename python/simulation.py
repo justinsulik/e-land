@@ -11,11 +11,11 @@ class GlobalParams():
     """
     map_size = 40
     timesteps = 400
+    agent_number = 40
 
     # EPISTEMIC PARAMETERS
     desert = 2 #below which value is a patch considered desert (used for initial placement)
     sig_threshold = 0 #below which value a patch isn't worth excavating (used for evaluating epistemic work)
-    depletion_rate = 0.2
 
     # HILLS
     hill_number = 2
@@ -27,24 +27,30 @@ class GlobalParams():
     smoothing = 3
     octaves = 4
 
-    # AGENTS
-    agent_number = 40
-    velocity = 0.2
-
-    # Examples of setting social learning thresholds:
+    # STRAGEGIES
     # See population.py for a description of what they do
-    ## 2 options for distributions:
-    social_threshold = {'alpha': 1, 'beta': 9}
+
+    # social threshold: how much of an improvement (as slope: climb/distance) another agent's patch has to offer to be worth visiting
+    # lower value: more willing to follow others
+    social_threshold = {'alpha': 1, 'beta': 9, 'type': 'homogeneous'}
+    # can be parameterised in different ways:
+    ## as gamma distribution
     # social_threshold = {'k': 20, 'theta': 20}
     ## 1 option for constant
     # social_threshold = {'slope': 10000000}
     ## 1 option for proportion
     # social_threshold = {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1}
 
-    social_type = 'homogeneous' #values: homogeneous, heterogeneous
-    tolerance = 0 # how much decrease in value they can handle before doing social learning. 0 = looks at social info anytime goes downhill
-    resilience = 1 # rate at which their social threshold decreases if they aren't climbing. 1 = stays constant (the effect is multiplicative)
-    anticonformity = 0 # higher values means agents will avoid popular patches
+    # tolerance: how much decrease in value they can handle before doing social learning. 0 = looks at social info anytime goes downhill
+    tolerance = {'value': 0, 'type': 'homogeneous'}
+    # resilience: rate at which their social threshold decreases if they aren't climbing. 1 = stays constant
+    # (the effect is multiplicative so values much below 0.99 quickly lead to very low thresholds
+    resilience = {'value': 1, 'type': 'homogeneous'}
+    # anticonformity: how much a patch being explored by others will disincentivize them to visit.
+    # 0 = no effect of who else has visited a patch; higher value means agent will avoid popular patches
+    anticonformity = {'value': 0, 'type': 'homogeneous'}
+    velocity = {'value': 0.2, 'type': 'homogeneous'}
+    depletion_rate = {'value': 0.2, 'type': 'homogeneous'}
 
 class Simulation():
     """
@@ -84,7 +90,7 @@ class Simulation():
             self.updateData(timestep)
             self.population.move()
             self.population.decide()
-            self.population.work(self.params.depletion_rate)
+            self.population.work()
 
         self.report('message', "Python: sim done...")
 
