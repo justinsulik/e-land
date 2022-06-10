@@ -78,9 +78,17 @@ def set_anticonformity(params):
 
 def set_resilience(params):
     if params.resilience_type == 'homogeneous':
-        return params.resilience
+        if 'alpha' in params.resilience and 'beta' in params.resilience:
+            # it's a beta distribution
+            return params.resilience['alpha']/(params.resilience['alpha']+params.resilience['beta'])
+        else:
+            raise Exception("Other forms of resilience not yet implemented!")
     else:
-        raise Exception("Variable resilience not yet implemented!")
+        if 'alpha' in params.resilience and 'beta' in params.resilience:
+            # it's a beta distribution
+            return np.random.beta(params.resilience['alpha'], params.resilience['beta'], params.agent_number)
+        else:
+            raise Exception("Other forms of resilience not yet implemented!")
 
 def set_tolerance(params):
     if params.tolerance_type == 'homogeneous':

@@ -22,7 +22,8 @@ key_dict = {'id': 0,
     'highest_point': 15,
     'anticonformity': 16,
     'depletion_rate': 17,
-    'patch_popularity': 18}
+    'patch_popularity': 18,
+    'failures': 19}
 
 # todo def setSocialLearningThreshold():
 
@@ -51,6 +52,7 @@ class Population():
                                                   ('anticonformity', 'f4'),
                                                   ('depletion_rate', 'f4'),
                                                   ('patch_popularity', 'i4'),
+                                                  ('failures', 'i4'),
                                                   ('consumed', 'f4'),
                                                   ('starting_x', 'i4'), ('starting_y', 'i4')])
         # INITIALIZE AGENTS
@@ -64,6 +66,8 @@ class Population():
         self.agents['consumed'] = 0
         # Set status to explore
         self.agents['status'] = 0
+        # Have failed 0 times
+        self.agents['failures'] = 0
 
         # for tracking *unique* patches visited by each agent (uniqueness handled by type "set")
         self.patches_visited = defaultdict(set)
@@ -230,18 +234,20 @@ class Population():
         # Is the agent going downhill? Allow them to continue if random p < tolerance
         change_in_height = agent['previous_height'] - self.landscape.getSig(agent['x_patch'],agent['y_patch'])
         if current_height < agent['previous_height'] - agent['tolerance']:
+            self.agents[i]['failures'] +=1
             return True
         else:
             return False
 
-    def decide(self):
+    def decide(self, total_time):
         # Decide whether to keep going/look around/follow someone
         for i, agent in enumerate(self.agents):
             # If too far downhill, make a decision about learning strategy
             intolerable_decrease = self.goneTooFarDown(i)
             if intolerable_decrease:
-                # Lower the agent's threshold because of failure
-                agent['threshold'] = round(agent['threshold'] * agent['resilience'], 3)
+                # reduce the agent's threshold if they've failed
+                # 2/total_time means that the threshold bottoms out halfway through the run
+                agent['threshold'] = max(0, agent['threshold'] - (1-agent['resilience'])*(2/total_time))
                 # Find out how much the agent could potentially learn from others
                 max_learnable, best_candidate = self.checkMaxLearnable(i)
                 # Check if that amount is above agents' social learning threshold

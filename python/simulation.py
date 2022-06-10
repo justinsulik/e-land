@@ -47,7 +47,7 @@ class GlobalParams():
     tolerance_type = 'homogeneous'
     # resilience: rate at which their social threshold decreases if they aren't climbing. 1 = stays constant
     # (the effect is multiplicative so values much below 0.99 quickly lead to very low thresholds
-    resilience = 1
+    resilience = {'alpha': 1, 'beta': 9}
     resilience_type = 'homogeneous'
     # anticonformity: how much a patch being explored by others will disincentivize them to visit.
     # 0 = no effect of who else has visited a patch; higher value means agent will avoid popular patches
@@ -95,7 +95,7 @@ class Simulation():
             # This is the stuff that gets done at each timestep
             self.updateData(timestep)
             self.population.move()
-            self.population.decide()
+            self.population.decide(self.params.timesteps)
             self.population.work()
 
         self.report('message', "Python: sim done...")
@@ -126,12 +126,15 @@ class Simulation():
         data_out['sim'] = sim_number
         for param_name in self.changed:
             param_value = getattr(self.params, param_name)
+
             try:
-                #If the param is a dict, save each key as a column
-               for key in param_value:
-                   data_out[key] = param_value[key]
+               #If the param is a dict (e.g. for beta dist), work out the mean
+
+               value = param_value['alpha']/(param_value['alpha']+param_value['beta'])
+               data_out[param_name] = value
             except:
                 #Save the value as a column
+                print(param_name, param_value)
                 data_out[param_name] = param_value
         return(data_out)
 

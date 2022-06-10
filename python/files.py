@@ -7,7 +7,7 @@ def fileSuffix(sim_type):
     # Otherwise, see how many data files are in directory, and increment to get new ID
     if sim_type == 'test':
         return("_temp")
-    else:
+    elif sim_type == 'run':
         max_id = 0
         if os.path.exists("../data/"):
             for file in os.listdir("../data/"):
@@ -17,6 +17,13 @@ def fileSuffix(sim_type):
                     if file_id > max_id:
                         max_id = file_id
         return(max_id + 1)
+    else:
+        numbers = re.search('([0-9]+)', sim_type)
+        if numbers:
+            return numbers.group(1)
+        else:
+            raise Exception("Sim type not recognised! Should be one of: browser/test/number")
+
 
 def get_data_headers(sim_parameters, agent_columns_to_get=[]):
     # Is this looking for group-level or agent-level data?
@@ -35,12 +42,8 @@ def get_data_headers(sim_parameters, agent_columns_to_get=[]):
 def get_sim_headers(sim_parameters):
     headers = ''
     for i, param in enumerate(sim_parameters):
-        if param == 'social_threshold':
-            param_name = ','.join(sim_parameters[param][0].keys())
-        else:
-            param_name = param
         if i<len(sim_parameters)-1:
-            headers += param_name + ','
+            headers += param + ','
         else:
-            headers += param_name + '\n'
+            headers += param + '\n'
     return(headers)
