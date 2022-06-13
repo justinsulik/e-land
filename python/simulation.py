@@ -51,7 +51,7 @@ class GlobalParams():
     resilience_type = 'homogeneous'
     # anticonformity: how much a patch being explored by others will disincentivize them to visit.
     # 0 = no effect of who else has visited a patch; higher value means agent will avoid popular patches
-    anticonformity = 0
+    anticonformity = {'alpha': 1, 'beta': 9}
     anticonformity_type = 'homogeneous'
     velocity = 0.2
     velocity_type = 'homogeneous'
@@ -130,11 +130,10 @@ class Simulation():
             try:
                #If the param is a dict (e.g. for beta dist), work out the mean
 
-               value = param_value['alpha']/(param_value['alpha']+param_value['beta'])
-               data_out[param_name] = value
+                value = param_value['alpha']/(param_value['alpha']+param_value['beta'])
+                data_out[param_name] = value
             except:
                 #Save the value as a column
-                print(param_name, param_value)
                 data_out[param_name] = param_value
         return(data_out)
 

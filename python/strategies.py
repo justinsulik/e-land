@@ -63,7 +63,9 @@ def set_velocity(params):
         raise Exception("Variable velocity not yet implemented!")
 
 def set_anticonformity(params):
-    if params.anticonformity_type == 'homogeneous':
+    if params.resilience == 0:
+        return 0
+    elif params.anticonformity_type == 'homogeneous':
         if 'alpha' in params.anticonformity and 'beta' in params.anticonformity:
             # it's a beta distribution
             return params.anticonformity['alpha']/(params.anticonformity['alpha']+params.anticonformity['beta'])
@@ -77,6 +79,8 @@ def set_anticonformity(params):
             raise Exception("Other forms of anticonformity not yet implemented!")
 
 def set_resilience(params):
+    if params.resilience == 0:
+        return 0
     if params.resilience_type == 'homogeneous':
         if 'alpha' in params.resilience and 'beta' in params.resilience:
             # it's a beta distribution

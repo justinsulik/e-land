@@ -23,7 +23,8 @@ key_dict = {'id': 0,
     'anticonformity': 16,
     'depletion_rate': 17,
     'patch_popularity': 18,
-    'failures': 19}
+    'failures': 19,
+    'tolerance_start': 20}
 
 # todo def setSocialLearningThreshold():
 
@@ -53,6 +54,7 @@ class Population():
                                                   ('depletion_rate', 'f4'),
                                                   ('patch_popularity', 'i4'),
                                                   ('failures', 'i4'),
+                                                  ('tolerance_start', 'f4'),
                                                   ('consumed', 'f4'),
                                                   ('starting_x', 'i4'), ('starting_y', 'i4')])
         # INITIALIZE AGENTS
@@ -78,6 +80,7 @@ class Population():
         self.agents['anticonformity'] = strategies.set_anticonformity(params)
         self.agents['resilience'] = strategies.set_resilience(params)
         self.agents['tolerance'] = strategies.set_tolerance(params)
+        self.agents['tolerance_start'] = np.copy(self.agents['tolerance'])
         self.agents['depletion_rate'] = strategies.set_depletion_rate(params)
 
         #PLACE ALL AGENTS IN THE DESERT
@@ -210,14 +213,18 @@ class Population():
         return(inclines)
 
     def getAdjustedHeights(self, agent, dont_follow):
+        popularity = self.agents['patch_popularity']/len(self.agents)
         # How anticonformist is this agent?
         anticonformity = agent['anticonformity']
         # How much would they devalue popular patches?
         # assuming alpha + beta = 10 for beta.cdf
-        anticonf_beta = 10*anticonformity
-        anticonf_alpha = 10-anticonf_beta
-        popularity = self.agents['patch_popularity']/len(self.agents)
-        adjustment = beta.cdf(popularity, anticonf_alpha, anticonf_beta)
+
+        if anticonformity == 0:
+            adjustment == 0
+        else:
+            anticonf_beta = 10*anticonformity
+            anticonf_alpha = 10-anticonf_beta
+            adjustment = beta.cdf(popularity, anticonf_alpha, anticonf_beta)
         # Difference in height from focal agent
         others_heights = self.agents['height']*(1-adjustment)
         height_deltas = others_heights - self.landscape.getSig(agent['x_patch'],agent['y_patch'])
