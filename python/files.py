@@ -22,7 +22,7 @@ def fileSuffix(sim_type):
         if numbers:
             return numbers.group(1)
         else:
-            raise Exception("Sim type not recognised! Should be one of: browser/test/number")
+            raise Exception("Sim type not recognised! Should be one of: browser/test/run/number")
 
 
 def get_data_headers(sim_parameters, agent_columns_to_get=[]):

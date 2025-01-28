@@ -121,7 +121,7 @@ class Simulation():
         elif details =='agents':
             data_out = pd.DataFrame.from_dict(self.agent_data, orient="index").round(2)
         else:
-            raise Exception("details option not recognised (choose from: 'time', 'agents', 'basic')")
+            raise Exception("details arg not recognised (choose from: 'time', 'agents', 'basic')")
 
         data_out['sim'] = sim_number
         for param_name in self.changed:

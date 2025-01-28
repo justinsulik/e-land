@@ -20,7 +20,6 @@ if __name__ == "__main__":
         detail = sys.argv[2]
     except:
         detail = 'basic'
-
     # Set up sim runs depending whether this is called from Node app or with python3 at command line
     if sim_type == "browser":
         browser_params = json.loads(sys.argv[3])
@@ -32,20 +31,21 @@ if __name__ == "__main__":
             print("Data will overwrite temp files...")
 
         # Set up sim runs for various combinations of parameter settings
+        # Some examples are provided below but commented out
         sim_parameters = {
-         # 'social_threshold': [{'k': 1.1, 'theta': 0.05},
-         #     {'k': 1, 'theta': 0.2},
-         #     {'k': 1, 'theta': 0.35},
-         #     {'k': 1.1, 'theta': 0.5}],
-         'social_threshold': [
-            {'alpha': 1, 'beta': 9},
-            {'alpha': 3, 'beta': 7},
-            {'alpha': 5, 'beta': 5},
-            {'alpha': 7, 'beta': 3},
-            {'alpha': 9, 'beta': 1},
-            ],
-        'social_threshold_type': ['homogeneous', 'heterogeneous'],
+            'social_threshold_type': ['homogeneous', 'heterogeneous'],
 
+            'social_threshold': [
+                {'alpha': 1, 'beta': 9},
+                {'alpha': 3, 'beta': 7},
+                {'alpha': 5, 'beta': 5},
+                {'alpha': 7, 'beta': 3},
+                {'alpha': 9, 'beta': 1},
+                ],
+        # 'social_threshold': [{'k': 1.1, 'theta': 0.05},
+        #     {'k': 1, 'theta': 0.2},
+        #     {'k': 1, 'theta': 0.35},
+        #     {'k': 1.1, 'theta': 0.5}],
          # 'social_threshold': [
          # {'proportion': 0.2, 'conformist_threshold': 0, 'maverick_threshold': 1},
          # {'proportion': 0.4, 'conformist_threshold': 0, 'maverick_threshold': 1},
@@ -53,16 +53,16 @@ if __name__ == "__main__":
          # {'proportion': 0.8, 'conformist_threshold': 0, 'maverick_threshold': 1}
          # ],
          # 'social_threshold': [{'slope': 0}, {'slope': 1}, {'slope': 10}, {'slope': 100}],
-         # 'tolerance': [0, 0.3],
-         # 'tolerance_type': ['homogeneous', 'heterogeneous'],
-         'anticonformity': [
-             {'alpha': 1, 'beta': 9},
-             {'alpha': 3, 'beta': 7},
-             {'alpha': 5, 'beta': 5},
-             {'alpha': 7, 'beta': 3},
-             {'alpha': 9, 'beta': 1},
-         ],
-         'anticonformity_type': ['homogeneous', 'heterogeneous'],
+         'tolerance': [0, 0.3],
+         'tolerance_type': ['homogeneous', 'heterogeneous'],
+         # 'anticonformity': [
+         #     {'alpha': 1, 'beta': 9},
+         #     {'alpha': 3, 'beta': 7},
+         #     {'alpha': 5, 'beta': 5},
+         #     {'alpha': 7, 'beta': 3},
+         #     {'alpha': 9, 'beta': 1},
+         # ],
+         # 'anticonformity_type': ['homogeneous', 'heterogeneous'],
          # 'resilience': [
          #      {'alpha': 1, 'beta': 9},
          #      # {'alpha': 3, 'beta': 7},
